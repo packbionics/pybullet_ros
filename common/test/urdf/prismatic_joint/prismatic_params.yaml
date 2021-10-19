@@ -11,4 +11,4 @@ max_effort:             100.0           # default: 100.0, the max force to apply
 
 # True = allow pybullet to compute the inertia tensor based on mass and volume of the collision shape
 # False = you can provide a more accurate inertia tensor, so inertia will be read then from URDF model
-use_intertia_from_file: False           # default: False
+use_inertia_from_file: False           # default: False

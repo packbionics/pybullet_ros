@@ -5,16 +5,17 @@ plugin that is loaded one time only at the beginning
 It is meant to be for you to upload your environment
 """
 
-import rospy
+import rclpy
 import pybullet_ros.sdf.sdf_parser as sdf_parser
 
 class Environment:
-    def __init__(self, pybullet, **kargs):
+    def __init__(self, pybullet_ros_node, **kargs):
         # get "import pybullet as pb" and store in self.pb
-        self.pb = pybullet
+        self.node = pybullet_ros_node
+        self.pb = self.node.pb
         # enable soft body simulation if needed
-        if rospy.get_param('~use_deformable_world', False):
-            rospy.loginfo('Using deformable world (soft body simulation)')
+        if self.node.declare_parameter('~use_deformable_world', False).value:
+            self.node.get_logger().info('Using deformable world (soft body simulation)')
             self.pb.resetSimulation(self.pb.RESET_USE_DEFORMABLE_WORLD)
 
     def load_environment(self):
@@ -22,7 +23,7 @@ class Environment:
         set gravity, ground plane and load URDF or SDF models as required
         """
         # set gravity
-        gravity = rospy.get_param('~gravity', -9.81) # get gravity from param server
+        gravity = self.node.declare_parameter('~gravity', -9.81).value # get gravity from param server
         self.pb.setGravity(0, 0, gravity)
         # set floor
         self.pb.loadURDF('plane.urdf')

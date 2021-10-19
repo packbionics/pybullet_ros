@@ -1,6 +1,6 @@
 # pybullet_ros
 
-A bridge between [ROS1](https://www.ros.org/) and [PyBullet](https://pybullet.org/wordpress/)
+A bridge between [ROS2](https://www.ros.org/) and [PyBullet](https://pybullet.org/wordpress/)
 
 <img src="https://github.com/oscar-lima/pybullet_ros/blob/noetic/common/images/r2d2_rviz.png" alt="drawing" width="600"/>
 
@@ -139,7 +139,7 @@ The following parameters can be used to customize the behavior of the simulator.
 
 ```~max_effort_vel_mode``` - Deprecated parameter, use max_effort instead, backwards compatibility is provided, however please change your code asap
 
-```~use_intertia_from_file``` - If True pybullet will compute the inertia tensor based on mass and volume of the collision shape, default: False
+```~use_inertia_from_file``` - If True pybullet will compute the inertia tensor based on mass and volume of the collision shape, default: False
 
 ```~robot_pose_x``` - The position where to spawn the robot in the world in m, default: 0.0
 

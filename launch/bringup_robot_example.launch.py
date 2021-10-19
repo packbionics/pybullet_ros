@@ -44,12 +44,12 @@ def generate_launch_description():
         default_value=TextSubstitution(
             text=os.path.join(
                 share_dir,
-                "common/test/urdf/r2d2_robot/r2d2.urdf"
+                "common/test/urdf/r2d2_robot/r2d2.urdf.xacro"
             )
         )
     )
-    parse_simulation_arg = DeclareLaunchArgument(
-        "parse_simulation", 
+    pause_simulation_arg = DeclareLaunchArgument(
+        "pause_simulation", 
         default_value=TextSubstitution(
             text="False"
         )
@@ -109,7 +109,7 @@ def generate_launch_description():
         environment_arg,
         pybullet_gui_arg,
         robot_urdf_path_arg,
-        parse_simulation_arg,
+        pause_simulation_arg,
         parallel_plugin_execution_arg,
         robot_pose_x_arg,
         robot_pose_y_arg,
@@ -126,11 +126,14 @@ def generate_launch_description():
             parameters=[
                 LaunchConfiguration('config_file'),
                 {
+                    "robot_description": os.path.join(
+                        share_dir,
+                        "common/test/urdf/r2d2_robot/r2d2.urdf.xacro"),
                     "plugin_import_prefix": LaunchConfiguration('plugin_import_prefix'),
                     "environment": LaunchConfiguration('environment'),
                     "pybullet_gui": LaunchConfiguration('pybullet_gui'),
                     "robot_urdf_path": LaunchConfiguration('robot_urdf_path'),
-                    "parse_simulation": LaunchConfiguration('parse_simulation'),
+                    "pause_simulation": LaunchConfiguration('pause_simulation'),
                     "robot_pose_x": LaunchConfiguration('robot_pose_x'),
                     "robot_pose_y": LaunchConfiguration('robot_pose_y'),
                     "robot_pose_z": LaunchConfiguration('robot_pose_z'),

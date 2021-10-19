@@ -45,7 +45,7 @@ class FuncExecManager:
     """
     helper class to keep track of synchronous multiple parallel execution of functions with deadlines
     """
-    def __init__(self, list_of_objects, stop_condition, exec_after_each_loop, pause_execution, log_info=print,
+    def __init__(self, list_of_objects, exec_after_each_loop, pause_execution, log_info=print,
                  log_warn=print, log_debug=print, function_name='function'):
         # deadline for functions to finish their process
         self.loop_rate = 0.25 # every 4 secs
@@ -60,8 +60,6 @@ class FuncExecManager:
         self.cycle_unique_id = None
         # save in member variable the received list of objects
         self.list_of_objects = list_of_objects
-        # the function that will be called to check if algorithm should stop or continue
-        self.stop_condition = stop_condition
         # this function will be called after each loop
         self.exec_after_each_loop = exec_after_each_loop
         # offer the user the possibility to pause the execution
@@ -106,37 +104,40 @@ class FuncExecManager:
         if cycle_unique_id > sys.maxsize:
             cycle_unique_id = 0
         # run x iterations until user wants to stop (you might want to pass here a ctrl + c detection)
-        while not self.stop_condition():
-            # initialize flag
-            self.is_loop_finished = False
-            # jump to the next cycle id (because previous loop is finished)
-            cycle_unique_id = cycle_unique_id + 1
-            self.cycle_unique_id = cycle_unique_id
-            # start "on time" functions
-            thread_list = []
-            for func in self.on_time_functions:
-                thread_list.append(Thread(target=self.time_control, args=(cycle_unique_id, func,)))
-            self.on_time_functions = []
-            for t in thread_list:
-                t.start()
-            # run loop function on a separate thread
-            Thread(target=self.loop_thread).start()
-            # wait until loop finishes
-            while not self.is_loop_finished:
-                # if there is a late thread that finished, run it again right away
-                if self.late_functions != []:
-                    self.late_threads = []
-                    for func in self.late_functions:
-                        self.late_threads.append(Thread(target=self.time_control, args=(cycle_unique_id, func,)))
-                        self.late_threads[-1].start()
-                    self.late_functions = []
-                # sleep to reduce computational load
-                time.sleep(0.001)
-                # check if user wants to pause execution
-                while self.pause_execution():
-                    time.sleep(0.1)
-            # execute custom function after having finished the loop
-            self.exec_after_each_loop()
+        while True:
+            try:
+                # initialize flag
+                self.is_loop_finished = False
+                # jump to the next cycle id (because previous loop is finished)
+                cycle_unique_id = cycle_unique_id + 1
+                self.cycle_unique_id = cycle_unique_id
+                # start "on time" functions
+                thread_list = []
+                for func in self.on_time_functions:
+                    thread_list.append(Thread(target=self.time_control, args=(cycle_unique_id, func,)))
+                self.on_time_functions = []
+                for t in thread_list:
+                    t.start()
+                # run loop function on a separate thread
+                Thread(target=self.loop_thread).start()
+                # wait until loop finishes
+                while not self.is_loop_finished:
+                    # if there is a late thread that finished, run it again right away
+                    if self.late_functions != []:
+                        self.late_threads = []
+                        for func in self.late_functions:
+                            self.late_threads.append(Thread(target=self.time_control, args=(cycle_unique_id, func,)))
+                            self.late_threads[-1].start()
+                        self.late_functions = []
+                    # sleep to reduce computational load
+                    time.sleep(0.001)
+                    # check if user wants to pause execution
+                    while self.pause_execution():
+                        time.sleep(0.1)
+                # execute custom function after having finished the loop
+                self.exec_after_each_loop()
+            except KeyboardInterrupt:
+                break
         # wait for threads to finish
         for thread in self.late_threads:
             thread.join()

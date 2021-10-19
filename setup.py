@@ -4,6 +4,7 @@ from glob import glob
 from setuptools import setup
 
 package_name = 'pybullet_ros'
+submodules = [os.path.join(package_name, sub) for sub in ['plugins', 'sdf']]
 
 data_files = [
         ('share/ament_index/resource_index/packages',
@@ -29,7 +30,7 @@ for directory in data_directories:
 setup(
     name=package_name,
     version='0.0.1',
-    packages=[package_name],
+    packages=[package_name] + submodules,
     data_files=data_files,
     install_requires=['setuptools'],
     zip_safe=True,
@@ -40,7 +41,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'pybullet_ros_node = pybullet_ros.pybullet_ros_node:main'
+            'pybullet_ros_node = pybullet_ros.pybullet_ros:main'
         ],
     },
 )

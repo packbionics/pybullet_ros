@@ -4,35 +4,41 @@ import os
 import importlib
 import rclpy
 import pybullet_data
+from rclpy.node import Node
 
 from std_srvs.srv import Empty
 from pybullet_ros.function_exec_manager import FuncExecManager
 
-class pyBulletRosWrapper(object):
+class pyBulletRosWrapper(Node):
     """ROS wrapper class for pybullet simulator"""
     def __init__(self):
+
+        rclpy.init()
+        super().__init__('pybullet_ros')
+
         # import pybullet
         self.pb = importlib.import_module('pybullet')
         # get from param server the frequency at which to run the simulation
-        self.loop_rate = rclpy.get_param('~loop_rate', 80.0)
+        self.loop_rate = self.declare_parameter('loop_rate', 80.0).value
+
         # query from param server if gui is needed
-        is_gui_needed = rclpy.get_param('~pybullet_gui', True)
+        is_gui_needed = self.declare_parameter('pybullet_gui', True).value
         # get from param server if user wants to pause simulation at startup
-        self.pause_simulation = rclpy.get_param('~pause_simulation', False)
+        self.pause_simulation = self.declare_parameter('pause_simulation', False).value
         print('\033[34m')
         # print pybullet stuff in blue
         physicsClient = self.start_gui(gui=is_gui_needed) # we dont need to store the physics client for now...
         # setup service to restart simulation
-        rclpy.Service('~reset_simulation', Empty, self.handle_reset_simulation)
+        self.create_service(Empty, 'reset_simulation', self.handle_reset_simulation)
         # setup services for pausing/unpausing simulation
-        rclpy.Service('~pause_physics', Empty, self.handle_pause_physics)
-        rclpy.Service('~unpause_physics', Empty, self.handle_unpause_physics)
+        self.create_service(Empty, 'pause_physics', self.handle_pause_physics)
+        self.create_service(Empty, 'unpause_physics', self.handle_unpause_physics)
         # get pybullet path in your system and store it internally for future use, e.g. to set floor
         self.pb.setAdditionalSearchPath(pybullet_data.getDataPath())
         # create object of environment class for later use
-        env_plugin = rclpy.get_param('~environment', 'environment') # default : plugins/environment.py
-        plugin_import_prefix = rclpy.get_param('~plugin_import_prefix', 'pybullet_ros.plugins')
-        self.environment = getattr(importlib.import_module(f'{plugin_import_prefix}.{env_plugin}'), 'Environment')(self.pb)
+        env_plugin = self.declare_parameter('environment', 'environment').value # default : plugins/environment.py
+        plugin_import_prefix = self.declare_parameter('plugin_import_prefix', 'pybullet_ros.plugins').value
+        self.environment = getattr(importlib.import_module(f'{plugin_import_prefix}.{env_plugin}'), 'Environment')(self)
         # load robot URDF model, set gravity, and ground plane
         self.robot = self.init_pybullet_robot()
         self.connected_to_physics_server = None
@@ -45,9 +51,9 @@ class pyBulletRosWrapper(object):
         rev_joint_index_name_dic, prismatic_joint_index_name_dic, fixed_joint_index_name_dic, link_names_to_ids_dic = self.get_properties()
         # import plugins dynamically
         self.plugins = []
-        plugins = rclpy.get_param('~plugins', [])
+        plugins = self.declare_parameter('plugins', []).value
         if not plugins:
-            rclpy.logwarn('No plugins found, forgot to set param ~plugins?')
+            self.get_logger().warn('No plugins found, forgot to set param plugins?')
         # return to normal shell color
         print('\033[0m')
         # load plugins
@@ -55,7 +61,7 @@ class pyBulletRosWrapper(object):
             module_ = plugin.pop("module")
             class_ = plugin.pop("class")
             params_ = plugin.copy()
-            rclpy.loginfo('loading plugin: {} class from {}'.format(class_, module_))
+            self.get_logger().info('loading plugin: {} class from {}'.format(class_, module_))
             # create object of the imported file class
             obj = getattr(importlib.import_module(module_), class_)(self.pb, self.robot,
                           rev_joints=rev_joint_index_name_dic,
@@ -65,7 +71,7 @@ class pyBulletRosWrapper(object):
                           **params_)
             # store objects in member variable for future use
             self.plugins.append(obj)
-        rclpy.loginfo('pybullet ROS wrapper initialized')
+        self.get_logger().info('pybullet ROS wrapper initialized')
 
     def get_properties(self):
         """
@@ -94,7 +100,7 @@ class pyBulletRosWrapper(object):
 
     def handle_reset_simulation(self, req):
         """Callback to handle the service offered by this node to reset the simulation"""
-        rclpy.loginfo('reseting simulation now')
+        self.get_logger().info('reseting simulation now')
         self.pb.resetSimulation()
         return Empty()
 
@@ -102,65 +108,55 @@ class pyBulletRosWrapper(object):
         """start physics engine (client) with or without gui"""
         if(gui):
             # start simulation with gui
-            rclpy.loginfo('Running pybullet with gui')
-            rclpy.loginfo('-------------------------')
-            gui_options = rclpy.get_param('~gui_options', '') # e.g. to maximize screen: options="--width=2560 --height=1440"
+            self.get_logger().info('Running pybullet with gui')
+            self.get_logger().info('-------------------------')
+            gui_options = self.declare_parameter('gui_options', '').value # e.g. to maximize screen: options="--width=2560 --height=1440"
             return self.pb.connect(self.pb.GUI, options=gui_options)
         else:
             # start simulation without gui (non-graphical version)
-            rclpy.loginfo('Running pybullet without gui')
+            self.get_logger().info('Running pybullet without gui')
             # hide console output from pybullet
-            rclpy.loginfo('-------------------------')
+            self.get_logger().info('-------------------------')
             return self.pb.connect(self.pb.DIRECT)
 
     def init_pybullet_robot(self):
         """load robot URDF model, set gravity, ground plane and environment"""
         # get from param server the path to the URDF robot model to load at startup
-        urdf_path = rclpy.get_param('~robot_urdf_path', None)
+        urdf_path = self.declare_parameter('robot_urdf_path', None).value
         if urdf_path == None:
-            rclpy.signal_shutdown('mandatory param robot_urdf_path not set, will exit now')
+            self.get_logger().warn('mandatory param robot_urdf_path not set, will exit now')
+            rclpy.shutdown()
         # test urdf file existance
         if not os.path.isfile(urdf_path):
-            rclpy.logerr('param robot_urdf_path is set, but file does not exist : ' + urdf_path)
-            rclpy.signal_shutdown('required robot urdf file not found')
+            self.get_logger().error('param robot_urdf_path is set, but file does not exist : ' + urdf_path)
+            rclpy.shutdown()
             return None
         # ensure urdf is not xacro, but if it is then make urdf file version out of it
         if 'xacro' in urdf_path:
-            robot_description = rclpy.get_param('robot_description', None)
-            if not robot_description:
-                rclpy.logerr('required robot_description param not set')
-                return None
             # remove xacro from name
             urdf_path_without_xacro = urdf_path[0:urdf_path.find('.xacro')]+urdf_path[urdf_path.find('.xacro')+len('.xacro'):]
-            rclpy.loginfo('generating urdf model from xacro from robot_description param server under: {0}'.format(urdf_path_without_xacro))
-            try:
-                urdf_file = open(urdf_path_without_xacro,'w')
-            except:
-                rclpy.logerr('Failed to create urdf file from xacro, cannot write into destination: {0}'.format(urdf_path_without_xacro))
-                return None
-            urdf_file.write(robot_description)
-            urdf_file.close()
+            os.system(f'xacro {urdf_path} -o {urdf_path_without_xacro}')
             urdf_path = urdf_path_without_xacro
         # get robot spawn pose from parameter server
-        robot_pose_x = rclpy.get_param('~robot_pose_x', 0.0)
-        robot_pose_y = rclpy.get_param('~robot_pose_y', 0.0)
-        robot_pose_z = rclpy.get_param('~robot_pose_z', 1.0)
-        robot_pose_yaw = rclpy.get_param('~robot_pose_yaw', 0.0)
+        robot_pose_x = self.declare_parameter('robot_pose_x', 0.0).value
+        robot_pose_y = self.declare_parameter('robot_pose_y', 0.0).value
+        robot_pose_z = self.declare_parameter('robot_pose_z', 1.0).value
+        robot_pose_yaw = self.declare_parameter('robot_pose_yaw', 0.0).value
         robot_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, robot_pose_yaw])
-        fixed_base = rclpy.get_param('~fixed_base', False)
+        fixed_base = self.declare_parameter('fixed_base', False).value
         # load robot from URDF model
         # user decides if inertia is computed automatically by pybullet or custom
-        if rclpy.get_param('~use_intertia_from_file', False):
+        if self.declare_parameter('use_inertia_from_file', False).value:
             # combining several boolean flags using "or" according to pybullet documentation
             urdf_flags = self.pb.URDF_USE_INERTIA_FROM_FILE | self.pb.URDF_USE_SELF_COLLISION
         else:
             urdf_flags = self.pb.URDF_USE_SELF_COLLISION
         # load environment
-        rclpy.loginfo('loading environment')
+        self.get_logger().info('loading environment')
         self.environment.load_environment()
         # set no realtime simulation, NOTE: no need to stepSimulation if setRealTimeSimulation is set to 1
         self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0
-        rclpy.loginfo('loading urdf model: ' + urdf_path)
+        self.get_logger().info('loading urdf model: ' + urdf_path)
         # NOTE: self collision enabled by default
         return self.pb.loadURDF(urdf_path, basePosition=[robot_pose_x, robot_pose_y, robot_pose_z],
                                            baseOrientation=robot_spawn_orientation,
@@ -168,7 +164,7 @@ class pyBulletRosWrapper(object):
 
     def handle_reset_simulation(self, req):
         """Callback to handle the service offered by this node to reset the simulation"""
-        rclpy.loginfo('reseting simulation now')
+        self.get_logger().info('reseting simulation now')
         # pause simulation to prevent reading joint values with an empty world
         self.pause_simulation = True
         # remove all objects from the world and reset the world to initial conditions
@@ -181,13 +177,13 @@ class pyBulletRosWrapper(object):
 
     def handle_pause_physics(self, req):
         """pause simulation, raise flag to prevent pybullet to execute self.pb.stepSimulation()"""
-        rclpy.loginfo('pausing simulation')
+        self.get_logger().info('pausing simulation')
         self.pause_simulation = False
         return []
 
     def handle_unpause_physics(self, req):
         """unpause simulation, lower flag to allow pybullet to execute self.pb.stepSimulation()"""
-        rclpy.loginfo('unpausing simulation')
+        self.get_logger().info('unpausing simulation')
         self.pause_simulation = True
         return []
 
@@ -199,16 +195,19 @@ class pyBulletRosWrapper(object):
         This function is deprecated, we recommend the use of parallel plugin execution
         """
         rate = rclpy.Rate(self.loop_rate)
-        while not rclpy.is_shutdown():
-            if not self.pause_simulation:
-                # run x plugins
-                for task in self.plugins:
-                    task.execute()
-                # perform all the actions in a single forward dynamics simulation step such
-                # as collision detection, constraint solving and integration
-                self.pb.stepSimulation()
-            rate.sleep()
-        rclpy.logwarn('killing node now...')
+        while True:
+            try:
+                if not self.pause_simulation:
+                    # run x plugins
+                    for task in self.plugins:
+                        task.execute()
+                    # perform all the actions in a single forward dynamics simulation step such
+                    # as collision detection, constraint solving and integration
+                    self.pb.stepSimulation()
+                rate.sleep()
+            except KeyboardInterrupt:
+                break
+        self.get_logger().warn('killing node now...')
         # if node is killed, disconnect
         if self.connected_to_physics_server:
             self.pb.disconnect()
@@ -218,24 +217,25 @@ class pyBulletRosWrapper(object):
         Execute plugins in parallel, however watch their execution time and warn if exceeds the deadline (loop rate)
         """
         # create object of our parallel execution manager
-        exec_manager_obj = FuncExecManager(self.plugins, rclpy.is_shutdown, self.pb.stepSimulation, self.pause_simulation_function,
-                                    log_info=rclpy.loginfo, log_warn=rclpy.logwarn, log_debug=rclpy.logdebug, function_name='plugin')
+        exec_manager_obj = FuncExecManager(self.plugins, self.pb.stepSimulation, self.pause_simulation_function,
+                                    log_info=self.get_logger().info, log_warn=self.get_logger().warn, log_debug=self.get_logger().debug, function_name='plugin')
         # start parallel execution of all "execute" class methods in a synchronous way
         exec_manager_obj.start_synchronous_execution(loop_rate=self.loop_rate)
         # ctrl + c was pressed, exit
-        rclpy.logwarn('killing node now...')
+        self.get_logger().warn('killing node now...')
         # if node is killed, disconnect
         if self.connected_to_physics_server:
             self.pb.disconnect()
 
     def start_pybullet_ros_wrapper(self):
-        if rclpy.get_param('~parallel_plugin_execution', True):
+        if self.declare_parameter('parallel_plugin_execution', True).value:
             self.start_pybullet_ros_wrapper_parallel()
         else:
             self.start_pybullet_ros_wrapper_sequential()
 
 def main():
-    """function called by pybullet_ros_node script"""
-    rclpy.init_node('pybullet_ros', anonymous=False) # node name gets overrided if launched by a launch file
-    pybullet_ros_interface = pyBulletRosWrapper()
-    pybullet_ros_interface.start_pybullet_ros_wrapper()
+    node = pyBulletRosWrapper()
+    node.start_pybullet_ros_wrapper()
+    rclpy.spin(node)
+
+
