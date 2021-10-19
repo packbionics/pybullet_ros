@@ -2,5 +2,8 @@
 
 import pybullet_ros.pybullet_ros
 
-if __name__ == '__main__':
+def main():
     pybullet_ros.pybullet_ros.main()
+
+if __name__ == '__main__':
+    main()
