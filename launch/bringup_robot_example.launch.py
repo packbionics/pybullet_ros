@@ -121,7 +121,6 @@ def generate_launch_description():
         Node(
             package='pybullet_ros',
             executable='pybullet_ros_node',
-            name='pybullet_ros',
             output='screen',
             parameters=[
                 LaunchConfiguration('config_file'),
