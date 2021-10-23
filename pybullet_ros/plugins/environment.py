@@ -5,8 +5,9 @@ plugin that is loaded one time only at the beginning
 It is meant to be for you to upload your environment
 """
 
-import rclpy
 import pybullet_ros.sdf.sdf_parser as sdf_parser
+import rclpy
+
 
 class Environment:
     def __init__(self, pybullet_ros_node, **kargs):
@@ -14,7 +15,7 @@ class Environment:
         self.node = pybullet_ros_node
         self.pb = self.node.pb
         # enable soft body simulation if needed
-        if self.node.declare_parameter('~use_deformable_world', False).value:
+        if self.node.declare_parameter('use_deformable_world', False).value:
             self.node.get_logger().info('Using deformable world (soft body simulation)')
             self.pb.resetSimulation(self.pb.RESET_USE_DEFORMABLE_WORLD)
 
@@ -23,7 +24,7 @@ class Environment:
         set gravity, ground plane and load URDF or SDF models as required
         """
         # set gravity
-        gravity = self.node.declare_parameter('~gravity', -9.81).value # get gravity from param server
+        gravity = self.node.declare_parameter('gravity', -9.81).value # get gravity from param server
         self.pb.setGravity(0, 0, gravity)
         # set floor
         self.pb.loadURDF('plane.urdf')

@@ -9,14 +9,18 @@ however cmd_vel convention required velocity to be expressed w.r.t. robot base f
 therefore a transformation is needed.
 """
 
-import rospy
 import math
-import numpy as np
 
-from geometry_msgs.msg import Twist, Vector3Stamped, Vector3
+import numpy as np
+import rclpy
+from geometry_msgs.msg import Twist, Vector3, Vector3Stamped
+from rclpy.duration import Duration
+from rclpy.node import Node
+
 
 class cmdVelCtrl:
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, node, pybullet, robot, **kargs):
+        self.node = node
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
         # get robot from parent class
@@ -24,7 +28,13 @@ class cmdVelCtrl:
         # subscribe to robot velocity commands
         self.cmd_vel_msg = None
         self.received_cmd_vel_time = None
-        rospy.Subscriber("cmd_vel", Twist, self.cmdVelCB)
+
+        self.subscription = self.node.create_subscription(
+            Twist,
+            'cmd_vel',
+            self.cmdVelCB,
+            10
+        )
 
     # ---------- tf stuff starts
 
@@ -112,14 +122,14 @@ class cmdVelCtrl:
     def cmdVelCB(self, msg):
         """callback to receive vel commands from user"""
         self.cmd_vel_msg = msg
-        self.received_cmd_vel_time = rospy.Time.now()
+        self.received_cmd_vel_time = self.get_clock().now()
 
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
         if not self.cmd_vel_msg:
             return
         # check if timestamp is recent
-        if (rospy.Time.now() - rospy.Duration(0.5)) > self.received_cmd_vel_time:
+        if (self.node.get_clock().now() - Duration(0.5)) > self.received_cmd_vel_time:
             return
         # transform Twist from base_link to odom (pybullet allows to set vel only on world ref frame)
         # NOTE: we would normally use tf for this, but there are issues currently between python 2 and 3 in ROS 1

@@ -3,15 +3,16 @@
 """
 position, velocity and effort control for all revolute joints on the robot
 """
-
-import rospy
+import rclpy
+from rclpy.node import Node
 from std_msgs.msg import Float64
+from std_msgs.msg import String
 
 # NOTE: 2 classes are implemented here, scroll down to the next class (Control) to see the plugin!
 
 class pveControl:
     """helper class to receive position, velocity or effort (pve) control commands"""
-    def __init__(self, joint_index, joint_name, controller_type):
+    def __init__(self, node, joint_index, joint_name, controller_type):
         """constructor
         Assumes joint_name is unique, creates multiple subscribers to receive commands
         joint_index - stores an integer joint identifier
@@ -19,8 +20,14 @@ class pveControl:
         controller_type - position, velocity or effort
         """
         assert(controller_type in ['position', 'velocity', 'effort'])
-        rospy.Subscriber(joint_name + '_' + controller_type + '_controller/command',
-                         Float64, self.pve_controlCB, queue_size=1)
+        self.node = node
+        self.node.get_logger().info("subscribing to "+ joint_name + '_' + controller_type + '_controller/command')
+        self.subscription = self.node.create_subscription(
+            Float64,
+            joint_name + '_' + controller_type + '_controller/command',
+            self.pve_controlCB, 
+            1
+        )
         self.cmd = 0.0
         self.data_available = False
         self.joint_index = joint_index
@@ -30,6 +37,7 @@ class pveControl:
         """position, velocity or effort callback
         msg - the msg passed by the ROS network via topic publication
         """
+        self.node.get_logger().info("New control data available")
         self.data_available = True
         self.cmd = msg.data
 
@@ -51,8 +59,13 @@ class pveControl:
         return self.joint_index
 
 # plugin is implemented below
-class Control:
+class Control(Node):
     def __init__(self, pybullet, robot, **kargs):
+        super().__init__('pybullet_control')
+        self.i = 0
+        self.create_publisher(String, 'chatter', 10)
+        self.timer = self.create_timer(1.0, self.timer_callback)
+
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
         # get robot from parent class
@@ -62,12 +75,13 @@ class Control:
         self.velocity_joint_commands = []
         self.effort_joint_commands = []
         # this parameter will be set for all robot joints
-        if rospy.has_param('~max_effort_vel_mode'):
-            rospy.logwarn('max_effort_vel_mode parameter is deprecated, please use max_effort instead')
+        if self.has_parameter('max_effort_vel_mode'):
+            self.get_logger().warn('max_effort_vel_mode parameter is deprecated, please use max_effort instead')
             # kept for backwards compatibility, delete after some time
-            max_effort = rospy.get_param('~max_effort_vel_mode', 100.0)
+            max_effort = self.declare_parameter('max_effort_vel_mode', 100.0).value
         else:
-            max_effort = rospy.get_param('~max_effort', 100.0)
+            max_effort = self.declare_parameter('max_effort', 100.0).value
+            self.get_logger().info("Control: Max effort={}".format(max_effort))
         # the max force to apply to the joint, used in velocity control
         self.force_commands = []
         # get joints names and store them in dictionary, combine both revolute and prismatic dic
@@ -89,11 +103,18 @@ class Control:
             # create list of joints for later use in pve_ctrl_cmd(...)
             self.joint_indices.append(joint_index)
             # create position control object
-            self.pc_subscribers.append(pveControl(joint_index, joint_name, 'position'))
+            self.pc_subscribers.append(pveControl(self, joint_index, joint_name, 'position'))
             # create position control object
-            self.vc_subscribers.append(pveControl(joint_index, joint_name, 'velocity'))
+            self.vc_subscribers.append(pveControl(self, joint_index, joint_name, 'velocity'))
             # create position control object
-            self.ec_subscribers.append(pveControl(joint_index, joint_name, 'effort'))
+            self.ec_subscribers.append(pveControl(self, joint_index, joint_name, 'effort'))
+
+    def timer_callback(self):
+        msg = String()
+        msg.data = 'Hello World: {0}'.format(self.i)
+        self.i += 1
+        self.get_logger().info('Publishing: "{0}"'.format(msg.data))
+        self.pub.publish(msg)
 
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
@@ -103,14 +124,17 @@ class Control:
         velocity_ctrl_task = False
         effort_ctrl_task = False
         for index, subscriber in enumerate(self.pc_subscribers):
+            self.get_logger().info(str(subscriber.get_is_data_available()))
             if subscriber.get_is_data_available():
                 self.position_joint_commands[index] = subscriber.get_last_cmd()
                 position_ctrl_task = True
         for index, subscriber in enumerate(self.vc_subscribers):
+            self.get_logger().info(str(subscriber.get_is_data_available()))
             if subscriber.get_is_data_available():
                 self.velocity_joint_commands[index] = subscriber.get_last_cmd()
                 velocity_ctrl_task = True
         for index, subscriber in enumerate(self.ec_subscribers):
+            self.get_logger().info(str(subscriber.get_is_data_available()))
             if subscriber.get_is_data_available():
                 self.effort_joint_commands[index] = subscriber.get_last_cmd()
                 effort_ctrl_task = True

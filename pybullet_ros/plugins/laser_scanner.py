@@ -5,46 +5,50 @@ Laser scanner simulation based on pybullet rayTestBatch function
 This code does not add noise to the laser scanner readings
 """
 
-import rospy
 import math
+
 import numpy as np
+import rclpy
+from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 
+
 class laserScanner:
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, node, pybullet, robot, **kargs):
         # get "import pybullet as pb" and store in self.pb
+        self.node = node
         self.pb = pybullet
         # get robot from parent class
         self.robot = robot
         # laser params
-        laser_frame_id = rospy.get_param('~laser/frame_id', None) # laser reference frame, has to be an existing link
+        laser_frame_id = self.node.declare_parameter('laser/frame_id', None).value # laser reference frame, has to be an existing link
         if not laser_frame_id:
-            rospy.logerr('required parameter laser_frame_id not set, will exit now')
-            rospy.signal_shutdown('required param laser_frame_id not set')
+            self.node.get_logger().error('required parameter laser_frame_id not set, will exit now')
+            rclpy.shutdown()
             return
         # get pybullet laser link id from its name
         link_names_to_ids_dic = kargs['link_ids']
         if not laser_frame_id in link_names_to_ids_dic:
-            rospy.logerr('laser reference frame "{}" not found in URDF model, cannot continue'.format(laser_frame_id))
-            rospy.logwarn('Available frames are: {}'.format(link_names_to_ids_dic))
-            rospy.signal_shutdown('required param frame id not set properly')
+            self.node.get_logger().error('laser reference frame "{}" not found in URDF model, cannot continue'.format(laser_frame_id))
+            self.node.get_logger().error('Available frames are: {}'.format(link_names_to_ids_dic))
+            rclpy.shutdown()
             return
         self.pb_laser_link_id = link_names_to_ids_dic[laser_frame_id]
         # create laser msg placeholder for publication
         self.laser_msg = LaserScan()
         # laser field of view
-        angle_min = rospy.get_param('~laser/angle_min', -1.5707963)
-        angle_max = rospy.get_param('~laser/angle_max', 1.5707963)
+        angle_min = self.node.declare_parameter('laser/angle_min', -1.5707963).value
+        angle_max = self.node.declare_parameter('laser/angle_max', 1.5707963).value
         assert(angle_max > angle_min)
-        self.numRays = rospy.get_param('~laser/num_beams', 50) # should be 512 beams but simulation becomes slow
-        self.laser_msg.range_min = rospy.get_param('~laser/range_min', 0.03)
-        self.laser_msg.range_max = rospy.get_param('~laser/range_max', 5.6)
-        self.beam_visualisation = rospy.get_param('~laser/beam_visualisation', False)
+        self.numRays = self.node.declare_parameter('laser/num_beams', 50).value # should be 512 beams but simulation becomes slow
+        self.laser_msg.range_min = self.node.declare_parameter('laser/range_min', 0.03).value
+        self.laser_msg.range_max = self.node.declare_parameter('laser/range_max', 5.6).value
+        self.beam_visualisation = self.node.declare_parameter('laser/beam_visualisation', False).value
         self.laser_msg.angle_min = angle_min
         self.laser_msg.angle_max = angle_max
         self.laser_msg.angle_increment = (angle_max - angle_min) / self.numRays
         # register this node in the network as a publisher in /scan topic
-        self.pub_laser_scanner = rospy.Publisher('scan', LaserScan, queue_size=1)
+        self.pub_laser_scanner = self.node.create_publisher(LaserScan, 'scan', 1)
         self.laser_msg.header.frame_id = laser_frame_id
         self.laser_msg.time_increment = 0.01 # ?
         self.laser_msg.scan_time = 0.1 # 10 hz
@@ -114,6 +118,6 @@ class laserScanner:
             # compute laser ranges from hitFraction -> results[i][2]
             self.laser_msg.ranges.append(results[i][2] * self.laser_msg.range_max)
         # update laser time stamp with current time
-        self.laser_msg.header.stamp = rospy.Time.now()
+        self.laser_msg.header.stamp = self.node.get_clock().now().to_msg()
         # publish scan
         self.pub_laser_scanner.publish(self.laser_msg)

@@ -41,7 +41,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'pybullet_ros_node = pybullet_ros.pybullet_ros:main'
+            'pybullet_ros_wrapper = pybullet_ros.pybullet_ros_wrapper:main'
         ],
     },
 )

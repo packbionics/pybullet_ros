@@ -5,6 +5,7 @@ from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution
 import os
 from ament_index_python import get_package_share_directory
+from rclpy import parameter
 
 def generate_launch_description():
 
@@ -103,6 +104,26 @@ def generate_launch_description():
         )
     )
 
+    parameters=[
+        LaunchConfiguration('config_file'),
+        {
+            "plugin_import_prefix": LaunchConfiguration('plugin_import_prefix'),
+            "environment": LaunchConfiguration('environment'),
+            "pybullet_gui": LaunchConfiguration('pybullet_gui'),
+            "robot_urdf_path": LaunchConfiguration('robot_urdf_path'),
+            "pause_simulation": LaunchConfiguration('pause_simulation'),
+            "robot_pose_x": LaunchConfiguration('robot_pose_x'),
+            "robot_pose_y": LaunchConfiguration('robot_pose_y'),
+            "robot_pose_z": LaunchConfiguration('robot_pose_z'),
+            "robot_pose_yaw": LaunchConfiguration('robot_pose_yaw'),
+            "fixed_base": LaunchConfiguration('fixed_base'),
+            "use_deformable_world": LaunchConfiguration('use_deformable_world'),
+            "gui_options": LaunchConfiguration('gui_options'),
+        }
+    ]
+
+    print(parameters)
+
     return LaunchDescription([
         config_file_arg,
         plugin_import_prefix_arg,
@@ -120,28 +141,8 @@ def generate_launch_description():
         gui_options_arg,
         Node(
             package='pybullet_ros',
-            executable='pybullet_ros_node',
-            name='pybullet_ros',
+            executable='pybullet_ros_wrapper',
             output='screen',
-            parameters=[
-                LaunchConfiguration('config_file'),
-                {
-                    "robot_description": os.path.join(
-                        share_dir,
-                        "common/test/urdf/r2d2_robot/r2d2.urdf.xacro"),
-                    "plugin_import_prefix": LaunchConfiguration('plugin_import_prefix'),
-                    "environment": LaunchConfiguration('environment'),
-                    "pybullet_gui": LaunchConfiguration('pybullet_gui'),
-                    "robot_urdf_path": LaunchConfiguration('robot_urdf_path'),
-                    "pause_simulation": LaunchConfiguration('pause_simulation'),
-                    "robot_pose_x": LaunchConfiguration('robot_pose_x'),
-                    "robot_pose_y": LaunchConfiguration('robot_pose_y'),
-                    "robot_pose_z": LaunchConfiguration('robot_pose_z'),
-                    "robot_pose_yaw": LaunchConfiguration('robot_pose_yaw'),
-                    "fixed_base": LaunchConfiguration('fixed_base'),
-                    "use_deformable_world": LaunchConfiguration('use_deformable_world'),
-                    "gui_options": LaunchConfiguration('gui_options'),
-                }
-            ]
+            parameters=parameters
         )
     ])

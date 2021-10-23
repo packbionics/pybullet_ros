@@ -4,10 +4,13 @@
 TODO: briefly describe your plugin here
 """
 
-import rospy
+import rclpy
+from rclpy.node import Node
+
 
 class pluginTemplate:
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, node, pybullet, robot, **kargs):
+        self.node = node
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
         # get robot from parent class
@@ -16,4 +19,4 @@ class pluginTemplate:
 
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
-        rospy.loginfo('my plugin is running!')
+        self.node.get_logger().info('my plugin is running!')

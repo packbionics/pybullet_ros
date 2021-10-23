@@ -38,8 +38,11 @@ loop rate ----------------------------------------------  (deadline)
 See function_exec_manager_example.py for a runing example on how to use this class
 """
 
+import copy
+import sys
+import time
 from threading import Thread
-import time, sys, copy
+
 
 class FuncExecManager:
     """
