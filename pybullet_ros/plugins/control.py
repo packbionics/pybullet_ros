@@ -4,14 +4,14 @@
 position, velocity and effort control for all revolute joints on the robot
 """
 
-import rospy
+from rclpy.node import Node
 from std_msgs.msg import Float64
 
 # NOTE: 2 classes are implemented here, scroll down to the next class (Control) to see the plugin!
 
 class pveControl:
     """helper class to receive position, velocity or effort (pve) control commands"""
-    def __init__(self, joint_index, joint_name, controller_type):
+    def __init__(self, node, joint_index, joint_name, controller_type):
         """constructor
         Assumes joint_name is unique, creates multiple subscribers to receive commands
         joint_index - stores an integer joint identifier
@@ -19,8 +19,14 @@ class pveControl:
         controller_type - position, velocity or effort
         """
         assert(controller_type in ['position', 'velocity', 'effort'])
-        rospy.Subscriber(joint_name + '_' + controller_type + '_controller/command',
-                         Float64, self.pve_controlCB, queue_size=1)
+        self.node = node
+        self.node.get_logger().info("subscribing to "+ joint_name + '_' + controller_type + '_controller/command')
+        self.subscription = self.node.create_subscription(
+            Float64,
+            joint_name + '_' + controller_type + '_controller/command',
+            self.pve_controlCB, 
+            1
+        )
         self.cmd = 0.0
         self.data_available = False
         self.joint_index = joint_index
@@ -51,8 +57,12 @@ class pveControl:
         return self.joint_index
 
 # plugin is implemented below
-class Control:
+class Control(Node):
     def __init__(self, pybullet, robot, **kargs):
+        super().__init__('pybullet_ros_control')
+        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        self.timer = self.create_timer(1.0/self.rate, self.execute)
+
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
         # get robot from parent class
@@ -62,12 +72,13 @@ class Control:
         self.velocity_joint_commands = []
         self.effort_joint_commands = []
         # this parameter will be set for all robot joints
-        if rospy.has_param('~max_effort_vel_mode'):
-            rospy.logwarn('max_effort_vel_mode parameter is deprecated, please use max_effort instead')
+        if self.has_parameter('max_effort_vel_mode'):
+            self.get_logger().warn('max_effort_vel_mode parameter is deprecated, please use max_effort instead')
             # kept for backwards compatibility, delete after some time
-            max_effort = rospy.get_param('~max_effort_vel_mode', 100.0)
+            max_effort = self.declare_parameter('max_effort_vel_mode', 100.0).value
         else:
-            max_effort = rospy.get_param('~max_effort', 100.0)
+            max_effort = self.declare_parameter('max_effort', 100.0).value
+            self.get_logger().info("Control: Max effort={}".format(max_effort))
         # the max force to apply to the joint, used in velocity control
         self.force_commands = []
         # get joints names and store them in dictionary, combine both revolute and prismatic dic
@@ -89,11 +100,11 @@ class Control:
             # create list of joints for later use in pve_ctrl_cmd(...)
             self.joint_indices.append(joint_index)
             # create position control object
-            self.pc_subscribers.append(pveControl(joint_index, joint_name, 'position'))
+            self.pc_subscribers.append(pveControl(self, joint_index, joint_name, 'position'))
             # create position control object
-            self.vc_subscribers.append(pveControl(joint_index, joint_name, 'velocity'))
+            self.vc_subscribers.append(pveControl(self, joint_index, joint_name, 'velocity'))
             # create position control object
-            self.ec_subscribers.append(pveControl(joint_index, joint_name, 'effort'))
+            self.ec_subscribers.append(pveControl(self, joint_index, joint_name, 'effort'))
 
     def execute(self):
         """this function gets called from pybullet ros main update loop"""

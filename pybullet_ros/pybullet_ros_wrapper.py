@@ -1,26 +1,34 @@
 #!/usr/bin/env python3
 
-import os
 import importlib
-import rclpy
-import pybullet_data
-from rclpy.node import Node
+import logging
+import os
+import traceback
 
+import pybullet_data
+import rclpy
+from rclpy import executors
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.node import Node
 from std_srvs.srv import Empty
+
 from pybullet_ros.function_exec_manager import FuncExecManager
+
 
 class pyBulletRosWrapper(Node):
     """ROS wrapper class for pybullet simulator"""
     def __init__(self):
 
-        rclpy.init()
         super().__init__('pybullet_ros')
+
+        ex = MultiThreadedExecutor()
+        self.executor = ex
 
         # import pybullet
         self.pb = importlib.import_module('pybullet')
         # get from param server the frequency at which to run the simulation
         self.loop_rate = self.declare_parameter('loop_rate', 80.0).value
-
+        self.get_logger().info('Loop rate: {}'.format(self.loop_rate))
         # query from param server if gui is needed
         is_gui_needed = self.declare_parameter('pybullet_gui', True).value
         # get from param server if user wants to pause simulation at startup
@@ -58,9 +66,8 @@ class pyBulletRosWrapper(Node):
         print('\033[0m')
         # load plugins
         for plugin in plugins:
-            module_ = plugin.pop("module")
-            class_ = plugin.pop("class")
-            params_ = plugin.copy()
+            module_, class_ = plugin.split(':')
+            params_ = {'module': module_, 'class': class_}
             self.get_logger().info('loading plugin: {} class from {}'.format(class_, module_))
             # create object of the imported file class
             obj = getattr(importlib.import_module(module_), class_)(self.pb, self.robot,
@@ -71,7 +78,26 @@ class pyBulletRosWrapper(Node):
                           **params_)
             # store objects in member variable for future use
             self.plugins.append(obj)
+            self.executor.add_node(obj)
+
         self.get_logger().info('pybullet ROS wrapper initialized')
+        self.timer = self.create_timer(1.0 / self.loop_rate, self.wrapper_callback)
+
+        self.executor.add_node(self)
+        try:
+            self.executor.spin()
+        #except Exception as e:
+        #    self.get_logger().error(traceback.format_exc())
+        finally:
+            self.executor.shutdown()
+            self.destroy_node()
+            for node in self.plugins:
+                node.destroy_node()
+
+    def wrapper_callback(self):
+        self.pb.stepSimulation()
+        if not self.connected_to_physics_server:
+            self.pb.disconnect()
 
     def get_properties(self):
         """
@@ -190,52 +216,12 @@ class pyBulletRosWrapper(Node):
     def pause_simulation_function(self):
         return self.pause_simulation
 
-    def start_pybullet_ros_wrapper_sequential(self):
-        """
-        This function is deprecated, we recommend the use of parallel plugin execution
-        """
-        rate = rclpy.Rate(self.loop_rate)
-        while True:
-            try:
-                if not self.pause_simulation:
-                    # run x plugins
-                    for task in self.plugins:
-                        task.execute()
-                    # perform all the actions in a single forward dynamics simulation step such
-                    # as collision detection, constraint solving and integration
-                    self.pb.stepSimulation()
-                rate.sleep()
-            except KeyboardInterrupt:
-                break
-        self.get_logger().warn('killing node now...')
-        # if node is killed, disconnect
-        if self.connected_to_physics_server:
-            self.pb.disconnect()
-
-    def start_pybullet_ros_wrapper_parallel(self):
-        """
-        Execute plugins in parallel, however watch their execution time and warn if exceeds the deadline (loop rate)
-        """
-        # create object of our parallel execution manager
-        exec_manager_obj = FuncExecManager(self.plugins, self.pb.stepSimulation, self.pause_simulation_function,
-                                    log_info=self.get_logger().info, log_warn=self.get_logger().warn, log_debug=self.get_logger().debug, function_name='plugin')
-        # start parallel execution of all "execute" class methods in a synchronous way
-        exec_manager_obj.start_synchronous_execution(loop_rate=self.loop_rate)
-        # ctrl + c was pressed, exit
-        self.get_logger().warn('killing node now...')
-        # if node is killed, disconnect
-        if self.connected_to_physics_server:
-            self.pb.disconnect()
-
-    def start_pybullet_ros_wrapper(self):
-        if self.declare_parameter('parallel_plugin_execution', True).value:
-            self.start_pybullet_ros_wrapper_parallel()
-        else:
-            self.start_pybullet_ros_wrapper_sequential()
-
 def main():
-    node = pyBulletRosWrapper()
-    node.start_pybullet_ros_wrapper()
-    rclpy.spin(node)
+    try:
+        rclpy.init()
+        pyBulletRosWrapper()
+    finally:
+        rclpy.shutdown()
 
-
+if __name__ == '__main__':
+    main()
