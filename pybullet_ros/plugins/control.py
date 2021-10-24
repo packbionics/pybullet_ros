@@ -3,10 +3,9 @@
 """
 position, velocity and effort control for all revolute joints on the robot
 """
-import rclpy
+
 from rclpy.node import Node
 from std_msgs.msg import Float64
-from std_msgs.msg import String
 
 # NOTE: 2 classes are implemented here, scroll down to the next class (Control) to see the plugin!
 
@@ -37,7 +36,6 @@ class pveControl:
         """position, velocity or effort callback
         msg - the msg passed by the ROS network via topic publication
         """
-        self.node.get_logger().info("New control data available")
         self.data_available = True
         self.cmd = msg.data
 
@@ -61,10 +59,9 @@ class pveControl:
 # plugin is implemented below
 class Control(Node):
     def __init__(self, pybullet, robot, **kargs):
-        super().__init__('pybullet_control')
-        self.i = 0
-        self.create_publisher(String, 'chatter', 10)
-        self.timer = self.create_timer(1.0, self.timer_callback)
+        super().__init__('pybullet_ros_control')
+        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        self.timer = self.create_timer(1.0/self.rate, self.execute)
 
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
@@ -109,13 +106,6 @@ class Control(Node):
             # create position control object
             self.ec_subscribers.append(pveControl(self, joint_index, joint_name, 'effort'))
 
-    def timer_callback(self):
-        msg = String()
-        msg.data = 'Hello World: {0}'.format(self.i)
-        self.i += 1
-        self.get_logger().info('Publishing: "{0}"'.format(msg.data))
-        self.pub.publish(msg)
-
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
         """check if user has commanded a joint and forward the request to pybullet"""
@@ -124,17 +114,14 @@ class Control(Node):
         velocity_ctrl_task = False
         effort_ctrl_task = False
         for index, subscriber in enumerate(self.pc_subscribers):
-            self.get_logger().info(str(subscriber.get_is_data_available()))
             if subscriber.get_is_data_available():
                 self.position_joint_commands[index] = subscriber.get_last_cmd()
                 position_ctrl_task = True
         for index, subscriber in enumerate(self.vc_subscribers):
-            self.get_logger().info(str(subscriber.get_is_data_available()))
             if subscriber.get_is_data_available():
                 self.velocity_joint_commands[index] = subscriber.get_last_cmd()
                 velocity_ctrl_task = True
         for index, subscriber in enumerate(self.ec_subscribers):
-            self.get_logger().info(str(subscriber.get_is_data_available()))
             if subscriber.get_is_data_available():
                 self.effort_joint_commands[index] = subscriber.get_last_cmd()
                 effort_ctrl_task = True

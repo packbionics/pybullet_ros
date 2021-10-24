@@ -10,17 +10,18 @@ therefore a transformation is needed.
 """
 
 import math
-
-import numpy as np
 import rclpy
+import numpy as np
 from geometry_msgs.msg import Twist, Vector3, Vector3Stamped
 from rclpy.duration import Duration
 from rclpy.node import Node
 
 
-class cmdVelCtrl:
-    def __init__(self, node, pybullet, robot, **kargs):
-        self.node = node
+class CmdVelCtrl(Node):
+    def __init__(self, pybullet, robot, **kargs):
+        super().__init__('pybullet_ros_cmd_vel')
+        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        self.timer = self.create_timer(1.0/self.rate, self.execute)
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
         # get robot from parent class
@@ -29,7 +30,7 @@ class cmdVelCtrl:
         self.cmd_vel_msg = None
         self.received_cmd_vel_time = None
 
-        self.subscription = self.node.create_subscription(
+        self.subscription = self.create_subscription(
             Twist,
             'cmd_vel',
             self.cmdVelCB,
@@ -88,7 +89,7 @@ class cmdVelCtrl:
         r = Vector3Stamped()
         r.header.stamp = v3s.header.stamp
         r.header.frame_id = target_frame
-        r.vector = Vector3(*xyz)
+        r.vector = Vector3(x=xyz[0],y=xyz[1],z=xyz[2])
         return r
 
     # ---------- tf stuff ends
@@ -129,22 +130,31 @@ class cmdVelCtrl:
         if not self.cmd_vel_msg:
             return
         # check if timestamp is recent
-        if (self.node.get_clock().now() - Duration(0.5)) > self.received_cmd_vel_time:
+        if (self.get_clock().now() - Duration(seconds=0.5)) > self.received_cmd_vel_time:
             return
+
         # transform Twist from base_link to odom (pybullet allows to set vel only on world ref frame)
         # NOTE: we would normally use tf for this, but there are issues currently between python 2 and 3 in ROS 1
+
         lin_vec = Vector3Stamped()
         lin_vec.header.frame_id = 'base_link'
         lin_vec.vector.x = self.cmd_vel_msg.linear.x
         lin_vec.vector.y = self.cmd_vel_msg.linear.y
         lin_vec.vector.z = self.cmd_vel_msg.linear.z
+
         ang_vec = Vector3Stamped()
         ang_vec.header.frame_id = 'base_link'
         ang_vec.vector.x = self.cmd_vel_msg.angular.x
         ang_vec.vector.y = self.cmd_vel_msg.angular.y
         ang_vec.vector.z = self.cmd_vel_msg.angular.z
+
         lin_cmd_vel_in_odom = self.transformVector3('odom', lin_vec)
         ang_cmd_vel_in_odom = self.transformVector3('odom', ang_vec)
         # set vel directly on robot model
         self.pb.resetBaseVelocity(self.robot, [lin_cmd_vel_in_odom.vector.x, lin_cmd_vel_in_odom.vector.y, lin_cmd_vel_in_odom.vector.z],
                                   [ang_cmd_vel_in_odom.vector.x, ang_cmd_vel_in_odom.vector.y, ang_cmd_vel_in_odom.vector.z])
+
+if __name__ == '__main__':
+    rclpy.init()
+    node = CmdVelCtrl(None, None)
+    rclpy.spin(node)

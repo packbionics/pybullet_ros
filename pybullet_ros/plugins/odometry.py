@@ -4,36 +4,38 @@
 Query robot base pose and speed from pybullet and publish to /odom topic
 This component does not add any noise to it
 """
-import rclpy
+
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, TransformStamped
 
 
-class simpleOdometry:
-    def __init__(self, node, pybullet, robot, **kargs):
-        self.node = node
+class SimpleOdometry(Node):
+    def __init__(self, pybullet, robot, **kargs):
+        super().__init__('pybullet_ros_odometry')
+        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        self.timer = self.create_timer(1.0/self.rate, self.execute)
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
         # get robot from parent class
         self.robot = robot
         # register this node as a /odom publisher
-        self.pub_odometry = self.node.create_publisher(Odometry, 'odom', 1)
+        self.pub_odometry = self.create_publisher(Odometry, 'odom', 1)
         # save some overhead by setting some information only once
         self.odom_msg = Odometry()
         self.odom_trans = TransformStamped()
-        odom_frame_param = self.node.declare_parameter('odom_frame', 'odom').value
-        robot_base_frame_param = self.node.declare_parameter('robot_base_frame', 'base_link').value
+        odom_frame_param = self.declare_parameter('odom_frame', 'odom').value
+        robot_base_frame_param = self.declare_parameter('robot_base_frame', 'base_link').value
         self.odom_msg.header.frame_id = odom_frame_param
         self.odom_msg.child_frame_id = robot_base_frame_param
         self.odom_trans.header.frame_id = odom_frame_param
         self.odom_trans.child_frame_id = robot_base_frame_param
-        self.br = TransformBroadcaster(self.node)
+        self.br = TransformBroadcaster(self)
 
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
         # set msg timestamp based on current time
-        now = self.node.get_clock().now().to_msg()
+        now = self.get_clock().now().to_msg()
         self.odom_msg.header.stamp = now
         self.odom_trans.header.stamp = now
         # query base pose from pybullet and store in odom msg

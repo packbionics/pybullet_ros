@@ -1,6 +1,7 @@
 # pybullet_ros
 
 A bridge between [ROS2](https://www.ros.org/) and [PyBullet](https://pybullet.org/wordpress/)
+Forked from [oscar-lima/pybullet_ros](https://github.com/oscar-lima/pybullet_ros)
 
 <img src="https://github.com/oscar-lima/pybullet_ros/blob/noetic/common/images/r2d2_rviz.png" alt="drawing" width="600"/>
 
@@ -10,16 +11,17 @@ This project is in a medium stage and presents with the following features:
 
 - body velocity control - Subscription to cmd_vel topic and apply desired speed to the robot (without noise)
 - joint control: Joint Position, velocity and effort control for all revolute joints on the robot
-- sensors: Odometry, joint states (joint position, velocity and effort feedback), laser scanner, RGB camera image
+- sensors: Odometry, joint states (joint position, velocity and effort feedback)
 
 Missing:
 
-- sensors: Depth information (pointcloud)
+- sensors: Laser scanner, RGB camera image, Depth information (pointcloud)
 - [sdf](http://sdformat.org) support
+- Full ROS2 Support (WIP)
 
 Main implementation is done [here](https://github.com/oscar-lima/pybullet_ros/blob/noetic/ros/src/pybullet_ros/pybullet_ros.py)
 
-## Installation
+## Installation (ROS1)
 
 The following instructions have been tested under ubuntu 20.04 and [ROS noetic](http://wiki.ros.org/noetic/Installation/Ubuntu).
 
@@ -43,7 +45,7 @@ We provide with 2 robots for testing purposes: acrobat and r2d2, they can be fou
 
 This code is shipped with a simple URDF robot for testing purposes (r2d2), you can run it by executing:
 
-        roslaunch pybullet_ros bringup_robot_example.launch
+        ros2 launch pybullet_ros bringup_robot_example.launch.py
 
 You should now be able to visualise the robot in a gui.
 
@@ -51,11 +53,11 @@ You should now be able to visualise the robot in a gui.
 
 Publish a float msg to the following topic:
 
-        rostopic pub /head_swivel_position_controller/command std_msgs/Float64 "data: 1.0" --once
+        ros2 topic pub /head_swivel_position_controller/command std_msgs/Float64 "data: 1.0" --once
 
 Move in position control with convenient gui:
 
-        roslaunch pybullet_ros position_cmd_gui.launch
+        ros2 launch pybullet_ros position_cmd_gui.launch.py
 
 A gui will pop up, use the slides to control the angle of your robot joints in position control.
 
@@ -73,11 +75,11 @@ Publish a float msg to the following topics:
 
 velocity controller interface:
 
-        rostopic pub /head_swivel_velocity_controller/command std_msgs/Float64 "data: 2.0" --once
+        ros2 topic pub /head_swivel_velocity_controller/command std_msgs/Float64 "data: 2.0" --once
 
 effort controller interface:
 
-        rostopic pub /head_swivel_effort_controller/command std_msgs/Float64 "data: -2000.0" --once
+        ros2 topic pub /head_swivel_effort_controller/command std_msgs/Float64 "data: -2000.0" --once
 
 Done. The robot should now move in velocity or effort control mode with the desired speed/torque.
 
@@ -85,7 +87,7 @@ Done. The robot should now move in velocity or effort control mode with the desi
 
 A convenient configuration file is provided for the visualization of the example robot, run it with:
 
-        rosrun rviz rviz --display-config `rospack find pybullet_ros`/ros/config/pybullet_config.rviz
+        rviz2 --display-config `ros2 pkg prefix pybullet_ros`/share/pybullet_ros/config/pybullet_config.rviz
 
 ## Topics you can use to interact with this node
 

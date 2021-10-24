@@ -2,10 +2,9 @@ from launch import LaunchDescription
 from launch.actions.declare_launch_argument import DeclareLaunchArgument
 from launch.substitutions.launch_configuration import LaunchConfiguration
 from launch_ros.actions import Node
-from launch.substitutions import TextSubstitution
+from launch.substitutions import TextSubstitution, Command
 import os
 from ament_index_python import get_package_share_directory
-from rclpy import parameter
 
 def generate_launch_description():
 
@@ -104,25 +103,39 @@ def generate_launch_description():
         )
     )
 
-    parameters=[
-        LaunchConfiguration('config_file'),
+    config_file = LaunchConfiguration('config_file')
+    plugin_import_prefix = LaunchConfiguration('plugin_import_prefix')
+    environment = LaunchConfiguration('environment')
+    pybullet_gui = LaunchConfiguration('pybullet_gui')
+    robot_urdf_path = LaunchConfiguration('robot_urdf_path')
+    pause_simulation = LaunchConfiguration('pause_simulation')
+    robot_pose_x = LaunchConfiguration('robot_pose_x')
+    robot_pose_y = LaunchConfiguration('robot_pose_y')
+    robot_pose_z = LaunchConfiguration('robot_pose_z')
+    robot_pose_yaw = LaunchConfiguration('robot_pose_yaw')
+    fixed_base = LaunchConfiguration('fixed_base')
+    use_deformable_world = LaunchConfiguration('use_deformable_world')
+    gui_options =LaunchConfiguration('gui_options')
+    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+
+    pybullet_ros_parameters=[
+        config_file, 
         {
-            "plugin_import_prefix": LaunchConfiguration('plugin_import_prefix'),
-            "environment": LaunchConfiguration('environment'),
-            "pybullet_gui": LaunchConfiguration('pybullet_gui'),
-            "robot_urdf_path": LaunchConfiguration('robot_urdf_path'),
-            "pause_simulation": LaunchConfiguration('pause_simulation'),
-            "robot_pose_x": LaunchConfiguration('robot_pose_x'),
-            "robot_pose_y": LaunchConfiguration('robot_pose_y'),
-            "robot_pose_z": LaunchConfiguration('robot_pose_z'),
-            "robot_pose_yaw": LaunchConfiguration('robot_pose_yaw'),
-            "fixed_base": LaunchConfiguration('fixed_base'),
-            "use_deformable_world": LaunchConfiguration('use_deformable_world'),
-            "gui_options": LaunchConfiguration('gui_options'),
+            "plugin_import_prefix": plugin_import_prefix,
+            "environment": environment,
+            "pybullet_gui": pybullet_gui,
+            "robot_urdf_path": robot_urdf_path,
+            "pause_simulation": pause_simulation,
+            "robot_pose_x": robot_pose_x,
+            "robot_pose_y": robot_pose_y,
+            "robot_pose_z": robot_pose_z, 
+            "robot_pose_yaw": robot_pose_yaw,
+            "fixed_base": fixed_base,
+            "use_deformable_world": use_deformable_world,
+            "gui_options": gui_options,
+            "use_sim_time": use_sim_time
         }
     ]
-
-    print(parameters)
 
     return LaunchDescription([
         config_file_arg,
@@ -143,6 +156,14 @@ def generate_launch_description():
             package='pybullet_ros',
             executable='pybullet_ros_wrapper',
             output='screen',
-            parameters=parameters
+            parameters=pybullet_ros_parameters
+        ),
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time, 
+                         'robot_description': Command(['xacro',' ', robot_urdf_path])}]
         )
     ])
