@@ -9,7 +9,7 @@
     <arg name="plugin_import_prefix" default="pybullet_ros.plugins" />
     <arg name="environment" default="environment" /> <!-- name of python file without the .py inside plugins folder -->
     <arg name="pybullet_gui" default="True" />
-    <arg name="robot_urdf_path" default="$(find pybullet_ros)/common/test/urdf/r2d2_robot/r2d2.urdf.xacro" />
+    <arg name="robot_urdf_path" default="$(find pybullet_ros)/common/test/urdf/cartpole_robot/cartpole.urdf" />
     <arg name="pause_simulation" default="False" />
     <arg name="parallel_plugin_execution" default="True" />
     <arg name="robot_pose_x" default="0.0" />

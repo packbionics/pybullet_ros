@@ -44,7 +44,7 @@ def generate_launch_description():
         default_value=TextSubstitution(
             text=os.path.join(
                 share_dir,
-                "common/test/urdf/r2d2_robot/r2d2.urdf.xacro"
+                "common/test/urdf/cartpole_robot/cartpole.urdf"
             )
         )
     )
@@ -75,7 +75,7 @@ def generate_launch_description():
     robot_pose_z_arg = DeclareLaunchArgument(
         "robot_pose_z", 
         default_value=TextSubstitution(
-            text="1.0"
+            text="0.1"
         )
     )
     robot_pose_yaw_arg = DeclareLaunchArgument(
@@ -164,6 +164,6 @@ def generate_launch_description():
             name='robot_state_publisher',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time, 
-                         'robot_description': Command(['xacro',' ', robot_urdf_path])}]
+                         'robot_description': robot_urdf_path}]
         )
     ])
