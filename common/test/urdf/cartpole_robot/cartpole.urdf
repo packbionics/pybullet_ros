@@ -54,16 +54,6 @@
             <color rgba="0.815686 0.054902 0.0431373 1.0"/>
             </material>
         </collision>
-        <inertial>
-            <mass value="100.0" />
-
-            <ixx>1.0</ixx>
-            <ixy>-1.0</ixy>
-            <ixz>-1.0</ixz>
-            <iyy>1.0</iyy>
-            <iyz>-1.0</iyz>
-            <izz>0.0</izz>
-        </inertial>
     </link>
 
     <link name="cart">
