@@ -54,6 +54,10 @@
             <color rgba="0.815686 0.054902 0.0431373 1.0"/>
             </material>
         </collision>
+        <inertial>
+            <mass value="0"/>
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        </inertial>
     </link>
 
     <link name="cart">
@@ -75,6 +79,10 @@
             <color rgba="0.937255 0.988235 1 1.0"/>
             </material>
         </collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        </inertial>
     </link>
 
     <link name="pole">
@@ -114,6 +122,11 @@
             <color rgba="0.615686 0.811765 0.929412 1.0"/>
             </material>
         </collision>
+        <inertial>
+            <origin xyz="-0.006 0.22 0.0" rpy="-1.5708 -0 3.14159" />
+            <mass value="1"/>
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        </inertial>
     </link>
 
     <joint name="revolute_pole" type="revolute">
@@ -130,7 +143,7 @@
         <parent link="rail" />
         <child link="cart" />
         <axis xyz="0 0 1"/>
-        <limit effort="1" velocity="20" lower="-0.42" upper="0.42"/>
+        <limit effort="1000" velocity="20" lower="-0.42" upper="0.42"/>
         <joint_properties friction="0.0"/>
     </joint>
 
