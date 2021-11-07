@@ -86,8 +86,6 @@ class pyBulletRosWrapper(Node):
 
         self.executor.add_node(self)
 
-        self.pb.setRealTimeSimulation(1)
-
         try:
             self.executor.spin()
         #except Exception as e:
@@ -99,7 +97,7 @@ class pyBulletRosWrapper(Node):
                 node.destroy_node()
 
     def wrapper_callback(self):
-        #self.pb.stepSimulation()
+        self.pb.stepSimulation()
         if not self.connected_to_physics_server:
             self.pb.disconnect()
 

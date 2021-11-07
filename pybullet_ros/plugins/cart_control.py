@@ -93,6 +93,7 @@ class CartControl(Node):
                                      controlMode=self.pb.VELOCITY_CONTROL, targetVelocities=self.velocity_joint_commands, forces=self.force_commands)
         elif effort_ctrl_task:
             self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
+                                     controlMode=self.pb.POSITION_CONTROL, forces=[0.0] * len(self.effort_joint_commands))
+            self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
                                      controlMode=self.pb.TORQUE_CONTROL, forces=self.effort_joint_commands)
     
-# TODO: decouple cart and pole joint control modes
