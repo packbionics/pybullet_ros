@@ -5,14 +5,14 @@ position, velocity and effort control for the cart on cartpole
 """
 
 from rclpy.node import Node
-from std_msgs.msg import Float64
 from pybullet_ros.plugins.control import pveControl
 
 
 class CartControl(Node):
     def __init__(self, pybullet, robot, **kargs):
-        super().__init__('pybullet_ros_control')
-        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        super().__init__('pybullet_ros_cart_control', 
+            automatically_declare_parameters_from_overrides=True)
+        self.rate = self.get_parameter('loop_rate').value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
 
         # get "import pybullet as pb" and store in self.pb
@@ -27,9 +27,9 @@ class CartControl(Node):
         if self.has_parameter('max_effort_vel_mode'):
             self.get_logger().warn('max_effort_vel_mode parameter is deprecated, please use max_effort instead')
             # kept for backwards compatibility, delete after some time
-            max_effort = self.declare_parameter('max_effort_vel_mode', 100.0).value
+            max_effort = self.get_parameter('max_effort_vel_mode').value
         else:
-            max_effort = self.declare_parameter('max_effort', 100.0).value
+            max_effort = self.get_parameter('max_effort').value
             self.get_logger().info("Control: Max effort={}".format(max_effort))
         # the max force to apply to the joint, used in velocity control
         self.force_commands = []
