@@ -48,7 +48,7 @@ def generate_launch_description():
         default_value=TextSubstitution(
             text=os.path.join(
                 description_dir,
-                "urdf/robot.urdf"
+                "robot/urdf/robot.urdf"
             )
         )
     )

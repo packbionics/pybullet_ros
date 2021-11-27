@@ -92,6 +92,7 @@ class CartControl(Node):
             self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
                                      controlMode=self.pb.VELOCITY_CONTROL, targetVelocities=self.velocity_joint_commands, forces=self.force_commands)
         elif effort_ctrl_task:
+            self.get_logger().info("doing effort ctrl..")
             self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
                                      controlMode=self.pb.POSITION_CONTROL, forces=[0.0] * len(self.effort_joint_commands))
             self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
