@@ -1,5 +1,5 @@
 # NOTE: Only certain parameters are exposed here, check sample launch files for the rest
-# Configuration parameters for Cartpole robot in pybullet ros simulator
+# Configuration parameters for JetLeg in pybullet ros simulator
 
 # pybullet plugins, will be loaded during runtime
 # -----------------------------------------------------------------------
@@ -15,14 +15,14 @@
     - pybullet_ros.plugins.joint_state_pub:JointStatePub
     - pybullet_ros.plugins.odometry:SimpleOdometry
     
-    loop_rate:              150.0           # The frequency at which to step sim in hz
+    loop_rate:              120.0           # The frequency at which to step sim in hz
     gravity:                -9.81           # Earth gravity in m/s^2
     max_effort:             100.0           # The max force to apply to the model in vel mode
     # True = allow pybullet to compute the inertia tensor based on mass and volume of the collision shape
     # False = you can provide a more accurate inertia tensor, so inertia will be read then from URDF model
     use_inertia_from_file: False           # default: False
 
-/pybullet_ros_control:
+/pybullet_ros_cart_control:
   ros__parameters:
     loop_rate:              80.0
     max_effort:             100.0
