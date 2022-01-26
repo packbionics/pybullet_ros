@@ -1,0 +1,36 @@
+# NOTE: Only certain parameters are exposed here, check sample launch files for the rest
+# Configuration parameters for JetLeg in pybullet ros simulator
+
+# pybullet plugins, will be loaded during runtime
+# -----------------------------------------------------------------------
+# body_vel_control - Subscribe to cmd_vel and apply desired speed to the robot, without any noise
+# odometry - Query robot base pose and speed from pybullet and publish to /odom topic
+# control  - Position, velocity and effort control for all revolute joints on the robot
+# joint_state_pub - Query robot state and publish position, velocity and effort values to /joint_states
+# laser_scanner - Laser scanner simulation based on pybullet rayTestBatch function
+/pybullet_ros:
+  ros__parameters:
+    plugins:
+    - pybullet_ros.plugins.cart_control:CartControl
+    - pybullet_ros.plugins.joint_state_pub:JointStatePub
+    - pybullet_ros.plugins.odometry:SimpleOdometry
+    
+    loop_rate:              120.0           # The frequency at which to step sim in hz
+    gravity:                -9.81           # Earth gravity in m/s^2
+    max_effort:             100.0           # The max force to apply to the model in vel mode
+    # True = allow pybullet to compute the inertia tensor based on mass and volume of the collision shape
+    # False = you can provide a more accurate inertia tensor, so inertia will be read then from URDF model
+    use_inertia_from_file: False           # default: False
+
+/pybullet_ros_cart_control:
+  ros__parameters:
+    loop_rate:              80.0
+    max_effort:             100.0
+
+/pybullet_ros_joint_state_pub:
+  ros__parameters:
+    loop_rate:              40.0
+
+/pybullet_ros_odometry:
+  ros__parameters:
+    loop_rate:              40.0
