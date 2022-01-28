@@ -11,7 +11,7 @@
 /pybullet_ros:
   ros__parameters:
     plugins:
-    - pybullet_ros.plugins.cart_control:CartControl
+    - pybullet_ros.plugins.control:Control
     - pybullet_ros.plugins.joint_state_pub:JointStatePub
     - pybullet_ros.plugins.odometry:SimpleOdometry
     
@@ -22,7 +22,7 @@
     # False = you can provide a more accurate inertia tensor, so inertia will be read then from URDF model
     use_inertia_from_file: False           # default: False
 
-/pybullet_ros_cart_control:
+/pybullet_ros_control:
   ros__parameters:
     loop_rate:              40.0
     max_effort:             100.0
