@@ -26,6 +26,7 @@ class pyBulletRosWrapper(Node):
 
         # import pybullet
         self.pb = importlib.import_module('pybullet')
+
         # get from param server the frequency at which to run the simulation
         self.loop_rate = self.declare_parameter('loop_rate', 80.0).value
         self.get_logger().info('Loop rate: {}'.format(self.loop_rate))
@@ -84,6 +85,7 @@ class pyBulletRosWrapper(Node):
         self.timer = self.create_timer(1.0 / self.loop_rate, self.wrapper_callback)
 
         self.executor.add_node(self)
+
         try:
             self.executor.spin()
         #except Exception as e:

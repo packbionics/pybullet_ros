@@ -9,6 +9,7 @@ from ament_index_python import get_package_share_directory
 def generate_launch_description():
 
     share_dir = get_package_share_directory('pybullet_ros')
+    desc_share_dir = get_package_share_directory('cartpole_description')
     
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
@@ -43,8 +44,8 @@ def generate_launch_description():
         "robot_urdf_path", 
         default_value=TextSubstitution(
             text=os.path.join(
-                share_dir,
-                "common/test/urdf/cartpole_robot/cartpole.urdf"
+                desc_share_dir,
+                "robot/urdf/robot.urdf"
             )
         )
     )
