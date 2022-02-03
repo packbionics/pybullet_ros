@@ -5,6 +5,7 @@ RGBD camera sensor simulation for pybullet_ros base on pybullet.getCameraImage()
 """
 
 import math
+from re import S
 
 import numpy as np
 import rclpy
@@ -24,6 +25,8 @@ class RGBDCamera(Node):
         self.robot = robot
         # create image msg placeholder for publication
         self.image_msg = Image()
+        self.image_mode = self.declare_parameter('image_mode', 'rgb').value
+        assert self.image_mode in ['rgb', 'rgbd', 'segmentation']
         # get RGBD camera parameters from ROS param server
         self.image_msg.width = self.declare_parameter('rgbd_camera/resolution/width', 640).value
         self.image_msg.height = self.declare_parameter('rgbd_camera/resolution/height', 480).value
@@ -56,8 +59,14 @@ class RGBDCamera(Node):
         self.projection_matrix = self.compute_projection_matrix()
         # use cv_bridge ros to convert cv matrix to ros format
         self.image_bridge = CvBridge()
-        # variable used to run this plugin at a lower frequency, HACK
-        self.count = 0
+
+        self.get_logger().info('RGBD camera plugin initialized, camera parameters:')
+        self.get_logger().info('  hfov: {}'.format(self.hfov))
+        self.get_logger().info('  vfov: {}'.format(self.vfov))
+        self.get_logger().info('  near_plane: {}'.format(self.near_plane))
+        self.get_logger().info('  far_plane: {}'.format(self.far_plane))
+        self.get_logger().info('  resolution: {}x{}'.format(self.image_msg.width, self.image_msg.height))
+        self.get_logger().info('  frame_id: {}'.format(self.image_msg.header.frame_id))
 
     def compute_projection_matrix(self):
         return self.pb.computeProjectionMatrix(
@@ -69,6 +78,7 @@ class RGBDCamera(Node):
                     farVal=self.far_plane)
 
     def extract_frame(self, camera_image):
+
         bgr_image = np.zeros((self.image_msg.height, self.image_msg.width, 3))
 
         camera_image = np.reshape(camera_image[2], (camera_image[1], camera_image[0], 4))
@@ -101,12 +111,6 @@ class RGBDCamera(Node):
         return np.dot(rotation_matrix, target_point) + camera_position
 
     def execute(self):
-        """this function gets called from pybullet ros main update loop"""
-        # run at lower frequency, camera computations are expensive
-        self.count += 1
-        if self.count < 100:
-            return
-        self.count = 0 # reset count
         # get camera pose
         cam_state = self.pb.getLinkState(self.robot, self.pb_camera_link_id)
         # target is a point 5m ahead of the robot camera expressed w.r.t world reference frame
@@ -114,16 +118,21 @@ class RGBDCamera(Node):
         view_matrix = self.pb.computeViewMatrix(cam_state[0], target, [0, 0, 1])
         # get camera image from pybullet
         pybullet_cam_resp = self.pb.getCameraImage(self.image_msg.width,
-                                                   self.image_msg.height,
-                                                   view_matrix,
-                                                   self.projection_matrix,
-                                                   renderer=self.pb.ER_BULLET_HARDWARE_OPENGL,
-                                                   flags=self.pb.ER_NO_SEGMENTATION_MASK)
+                                                    self.image_msg.height,
+                                                    view_matrix,
+                                                    self.projection_matrix,
+                                                    renderer=self.pb.ER_BULLET_HARDWARE_OPENGL
+                                                )
         # frame extraction function from qibullet
-        frame = self.extract_frame(pybullet_cam_resp)
+        if self.image_mode == 'rgb':
+            frame = self.extract_frame(pybullet_cam_resp)
+        else:
+            frame = pybullet_cam_resp[3]
+            print(frame)
         # fill pixel data array
         self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame).data
         # update msg time stamp
-        self.image_msg.header.stamp = self.get_clock.now()
+        self.image_msg.header.stamp = self.get_clock().now().to_msg()
         # publish camera image to ROS network
         self.pub_image.publish(self.image_msg)
+        self.get_logger().info('Published image')

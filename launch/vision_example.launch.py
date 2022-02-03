@@ -148,7 +148,7 @@ def generate_launch_description():
         environment_arg,
         pybullet_gui_arg,
         model_arg,
-        pause_simulation_arg,
+        pause_simulation_arg, 
         parallel_plugin_execution_arg,
         robot_pose_x_arg,
         robot_pose_y_arg,

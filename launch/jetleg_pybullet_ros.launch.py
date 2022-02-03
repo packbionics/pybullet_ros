@@ -15,7 +15,7 @@ def generate_launch_description():
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
     description_dir = get_package_share_path('jetleg_description')
     
-    default_model_path = description_dir / 'urdf/testrig.xacro'
+    default_model_path = description_dir / 'urdf/wheeled_testrig.xacro'
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
