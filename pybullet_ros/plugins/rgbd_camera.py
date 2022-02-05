@@ -4,6 +4,7 @@
 RGBD camera sensor simulation for pybullet_ros base on pybullet.getCameraImage()
 """
 
+from os.path import exists
 import math
 from re import S
 
@@ -47,7 +48,7 @@ class RGBDCamera(Node):
         self.pb_camera_link_id = link_names_to_ids_dic[cam_frame_id]
         self.image_msg.header.frame_id = cam_frame_id
         # create publisher
-        self.pub_image = self.create_publisher(Image, 'rgb_image', 1)
+        self.pub_image = self.create_publisher(Image, 'rgb_image', 10)
         self.image_msg.encoding = self.declare_parameter('rgbd_camera/resolution/encoding', 'rgb8').value
         self.image_msg.is_bigendian = self.declare_parameter('rgbd_camera/resolution/is_bigendian', 0).value
         self.image_msg.step = self.declare_parameter('rgbd_camera/resolution/step', 1920).value
@@ -98,6 +99,13 @@ class RGBDCamera(Node):
         # return frame
         return bgr_image.astype(np.uint8)
 
+    def extract_depth(self, depth_buffer):
+        depth_image = np.zeros((self.image_msg.height, self.image_msg.width))
+        depth_buffer = np.reshape(depth_buffer, (self.image_msg.height, self.image_msg.width))
+
+        depth_image = self.far_plane * self.near_plane / (self.far_plane - (self.far_plane - self.near_plane) * depth_buffer)
+        return (255*depth_image).astype(np.uint8)
+
     def compute_camera_target(self, camera_position, camera_orientation):
         """
         camera target is a point 5m in front of the robot camera
@@ -127,12 +135,15 @@ class RGBDCamera(Node):
         if self.image_mode == 'rgb':
             frame = self.extract_frame(pybullet_cam_resp)
         else:
-            frame = pybullet_cam_resp[3]
+            frame = self.extract_depth(pybullet_cam_resp[3])
             print(frame)
+        
         # fill pixel data array
-        self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame).data
-        # update msg time stamp
+        self.image_msg = self.image_bridge.cv2_to_imgmsg(frame)
+
+        # update msg time stamp and frame id
         self.image_msg.header.stamp = self.get_clock().now().to_msg()
+        self.image_msg.header.frame_id = 'camera_link'
         # publish camera image to ROS network
         self.pub_image.publish(self.image_msg)
-        self.get_logger().info('Published image')
+        self.get_logger().info('Published image of size: %d' % len(self.image_msg.data))
