@@ -99,11 +99,15 @@ class RGBDCamera(Node):
         # return frame
         return bgr_image.astype(np.uint8)
 
-    def extract_depth(self, depth_buffer):
+    def extract_depth(self, camera_image):
+        # Extract depth buffer
         depth_image = np.zeros((self.image_msg.height, self.image_msg.width))
-        depth_buffer = np.reshape(depth_buffer, (self.image_msg.height, self.image_msg.width))
+        depth_buffer = np.reshape(camera_image[3], (camera_image[1], camera_image[0]))
 
+        # Linearize depth buffer
         depth_image = self.far_plane * self.near_plane / (self.far_plane - (self.far_plane - self.near_plane) * depth_buffer)
+
+        # Convert from floating-point to uint8 and return result
         return (255*depth_image).astype(np.uint8)
 
     def compute_camera_target(self, camera_position, camera_orientation):
@@ -135,15 +139,13 @@ class RGBDCamera(Node):
         if self.image_mode == 'rgb':
             frame = self.extract_frame(pybullet_cam_resp)
         else:
-            frame = self.extract_depth(pybullet_cam_resp[3])
+            frame = self.extract_depth(pybullet_cam_resp)
             print(frame)
         
         # fill pixel data array
-        self.image_msg = self.image_bridge.cv2_to_imgmsg(frame)
-
+        self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame).data
         # update msg time stamp and frame id
         self.image_msg.header.stamp = self.get_clock().now().to_msg()
-        self.image_msg.header.frame_id = 'camera_link'
         # publish camera image to ROS network
         self.pub_image.publish(self.image_msg)
-        self.get_logger().info('Published image of size: %d' % len(self.image_msg.data))
+        self.get_logger().info('Published image')
