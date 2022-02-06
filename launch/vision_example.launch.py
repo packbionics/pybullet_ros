@@ -15,7 +15,7 @@ def generate_launch_description():
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
     description_dir = get_package_share_path('jetleg_description')
     
-    default_model_path = description_dir / 'urdf/wheeled_testrig.xacro'
+    default_model_path = description_dir / 'urdf/testrig_vision.xacro'
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
@@ -24,7 +24,7 @@ def generate_launch_description():
         default_value=TextSubstitution(
             text=os.path.join(
                 pybullet_ros_dir, 
-                "config/jetleg_params.yaml"
+                "config/jetleg_pybullet_vision_params.yaml"
             )
         )
     )
@@ -148,7 +148,7 @@ def generate_launch_description():
         environment_arg,
         pybullet_gui_arg,
         model_arg,
-        pause_simulation_arg,
+        pause_simulation_arg, 
         parallel_plugin_execution_arg,
         robot_pose_x_arg,
         robot_pose_y_arg,
