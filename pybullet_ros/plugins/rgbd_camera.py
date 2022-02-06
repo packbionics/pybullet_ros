@@ -10,6 +10,7 @@ from re import S
 
 import numpy as np
 import rclpy
+import cv2
 from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -101,14 +102,9 @@ class RGBDCamera(Node):
 
     def extract_depth(self, camera_image):
         # Extract depth buffer
-        depth_image = np.zeros((self.image_msg.height, self.image_msg.width))
         depth_buffer = np.reshape(camera_image[3], (camera_image[1], camera_image[0]))
-
-        # Linearize depth buffer
-        depth_image = self.far_plane * self.near_plane / (self.far_plane - (self.far_plane - self.near_plane) * depth_buffer)
-
         # Convert from floating-point to uint8 and return result
-        return (255*depth_image).astype(np.uint8)
+        return (depth_buffer*255).astype(np.uint8)
 
     def compute_camera_target(self, camera_position, camera_orientation):
         """
@@ -140,10 +136,10 @@ class RGBDCamera(Node):
             frame = self.extract_frame(pybullet_cam_resp)
         else:
             frame = self.extract_depth(pybullet_cam_resp)
-            print(frame)
-        
+            #print(frame)
+
         # fill pixel data array
-        self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame).data
+        self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame, encoding='passthrough').data
         # update msg time stamp and frame id
         self.image_msg.header.stamp = self.get_clock().now().to_msg()
         # publish camera image to ROS network
