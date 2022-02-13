@@ -31,7 +31,7 @@
     loop_rate:              30.0
     image_mode:             rgbd
     rgbd_camera/frame_id:   camera_link
-    rgbd_camera/resolution/encoding: 8UC1
+    rgbd_camera/resolution/encoding: 32FC1
     rgbd_camera/resolution/width:  1280
     rgbd_camera/resolution/height: 720
     rgbd_camera/resolution/step: 1280

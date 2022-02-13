@@ -3,6 +3,9 @@ import os
 from ament_index_python import get_package_share_directory
 from ament_index_python import get_package_share_path
 from launch_ros.actions import Node
+from launch_ros.actions import ComposableNodeContainer
+
+from launch_ros.descriptions import ComposableNode
 
 from launch import LaunchDescription
 from launch.actions.declare_launch_argument import DeclareLaunchArgument
@@ -171,5 +174,40 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time, 
                          'robot_description': robot_urdf}],
             arguments=[robot_urdf]
+        ),
+        ComposableNodeContainer(
+            name='container',
+            namespace='',
+            package='rclcpp_components',
+            executable='component_container',
+            composable_node_descriptions=[
+                # Driver itself
+                ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::ConvertMetricNode',
+                    name='convert_metric',
+                    remappings=[('image_raw', 'camera/depth/image_raw'),
+                                ('image', 'camera/depth/image_rect')]
+                ),
+            ],
+            output='screen',
+        ),
+        ComposableNodeContainer(
+            name='container',
+            namespace='',
+            package='rclcpp_components',
+            executable='component_container',
+            composable_node_descriptions=[
+                # Driver itself
+                ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::PointCloudXyzNode',
+                    name='PointCloudXyz',
+                    remappings=[('image_rect', '/camera/depth/image_rect'),
+                                ('camera_info', '/camera/camera_info'),
+                                ('points', '/camera/points')]
+                ),
+            ],
+            output='screen',
         )
     ])
