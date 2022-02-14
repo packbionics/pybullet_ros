@@ -65,6 +65,8 @@ class RGBDCamera(Node):
         self.pub_image_camera_info = self.create_publisher(ImageCamInfo, 'camera/image_cam_info', 10)
         self.image_cam_info_msg.hfov = self.hfov
         self.image_cam_info_msg.vfov = self.vfov
+        self.image_cam_info_msg.near_plane = self.near_plane
+        self.image_cam_info_msg.far_plane = self.far_plane
 
         # use cv_bridge ros to convert cv matrix to ros format
         self.image_bridge = CvBridge()
