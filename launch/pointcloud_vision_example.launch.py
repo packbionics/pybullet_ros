@@ -19,6 +19,7 @@ def generate_launch_description():
     description_dir = get_package_share_path('jetleg_description')
     
     default_model_path = description_dir / 'urdf/testrig_vision.xacro'
+    rviz_config_file = os.path.join(pybullet_ros_dir, 'config/pybullet_pointcloud_vision_config.rviz')
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
@@ -175,39 +176,17 @@ def generate_launch_description():
                          'robot_description': robot_urdf}],
             arguments=[robot_urdf]
         ),
-        ComposableNodeContainer(
-            name='container',
-            namespace='',
-            package='rclcpp_components',
-            executable='component_container',
-            composable_node_descriptions=[
-                # Driver itself
-                ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::ConvertMetricNode',
-                    name='convert_metric',
-                    remappings=[('image_raw', 'camera/depth/image_raw'),
-                                ('image', 'camera/depth/image_rect')]
-                ),
-            ],
+        Node(
+            package='point_cloud_gen',
+            executable='gen_point_cloud',
             output='screen',
+            remappings=[('image_cam_info', 'camera/image_cam_info'),
+                        ('point_cloud', 'camera/point_cloud')]
         ),
-        ComposableNodeContainer(
-            name='container',
-            namespace='',
-            package='rclcpp_components',
-            executable='component_container',
-            composable_node_descriptions=[
-                # Driver itself
-                ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::PointCloudXyzNode',
-                    name='PointCloudXyz',
-                    remappings=[('image_rect', '/camera/depth/image_rect'),
-                                ('camera_info', '/camera/camera_info'),
-                                ('points', '/camera/points')]
-                ),
-            ],
+        Node(
+            package='rviz2',
+            executable='rviz2',
             output='screen',
+            arguments=['-d', rviz_config_file]
         )
     ])
