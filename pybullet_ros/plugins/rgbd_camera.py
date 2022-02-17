@@ -62,7 +62,7 @@ class RGBDCamera(Node):
         self.far_plane = self.declare_parameter('rgbd_camera/far_plane', 8).value
         self.projection_matrix = self.compute_projection_matrix()
         # create publisher
-        self.pub_image_camera_info = self.create_publisher(ImageCamInfo, 'camera/image_cam_info', 2)
+        self.pub_image_camera_info = self.create_publisher(ImageCamInfo, 'camera/image_cam_info', 5)
         self.image_cam_info_msg.hfov = self.hfov
         self.image_cam_info_msg.vfov = self.vfov
         self.image_cam_info_msg.near_plane = self.near_plane
@@ -142,12 +142,12 @@ class RGBDCamera(Node):
         target = self.compute_camera_target(cam_state[0], cam_state[1])
         view_matrix = self.pb.computeViewMatrix(cam_state[0], target, [0, 0, 1])
         #TODO: compute camera matrix from projection and view matrix
-        camera_matrix = np.reshape(self.projection_matrix, (1,16))
+        #camera_matrix = np.reshape(self.projection_matrix, (1,16))
 
-        self.get_logger().info(str(camera_matrix[0][0:4]))
-        self.get_logger().info(str(camera_matrix[0][4:8]))
-        self.get_logger().info(str(camera_matrix[0][8:12]))
-        self.get_logger().info(str(camera_matrix[0][12:16]))
+        #self.get_logger().info(str(camera_matrix[0][0:4]))
+        #self.get_logger().info(str(camera_matrix[0][4:8]))
+        #self.get_logger().info(str(camera_matrix[0][8:12]))
+        #self.get_logger().info(str(camera_matrix[0][12:16]))
 
         # get camera image from pybullet
         pybullet_cam_resp = self.pb.getCameraImage(self.image_msg.width,
