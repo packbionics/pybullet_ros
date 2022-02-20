@@ -1,14 +1,18 @@
+import os
+
+from ament_index_python import get_package_share_directory
+from launch_ros.actions import Node
+
 from launch import LaunchDescription
 from launch.actions.declare_launch_argument import DeclareLaunchArgument
+from launch.substitutions import Command, TextSubstitution
 from launch.substitutions.launch_configuration import LaunchConfiguration
-from launch_ros.actions import Node
-from launch.substitutions import TextSubstitution, Command
-import os
-from ament_index_python import get_package_share_directory
+
 
 def generate_launch_description():
 
-    share_dir = get_package_share_directory('pybullet_ros')
+    pybullet_ros_dir = get_package_share_directory('pybullet_ros')
+    description_dir = get_package_share_directory('cartpole_description')
     
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
@@ -16,8 +20,8 @@ def generate_launch_description():
         "config_file", 
         default_value=TextSubstitution(
             text=os.path.join(
-                share_dir, 
-                "config/pybullet_params_example.yaml"
+                pybullet_ros_dir, 
+                "config/cartpole_params.yaml"
             )
         )
     )
@@ -43,8 +47,8 @@ def generate_launch_description():
         "robot_urdf_path", 
         default_value=TextSubstitution(
             text=os.path.join(
-                share_dir,
-                "common/test/urdf/r2d2_robot/r2d2.urdf.xacro"
+                description_dir,
+                "robot/urdf/robot.urdf"
             )
         )
     )
@@ -75,7 +79,7 @@ def generate_launch_description():
     robot_pose_z_arg = DeclareLaunchArgument(
         "robot_pose_z", 
         default_value=TextSubstitution(
-            text="1.0"
+            text="0.1"
         )
     )
     robot_pose_yaw_arg = DeclareLaunchArgument(
@@ -115,7 +119,7 @@ def generate_launch_description():
     robot_pose_yaw = LaunchConfiguration('robot_pose_yaw')
     fixed_base = LaunchConfiguration('fixed_base')
     use_deformable_world = LaunchConfiguration('use_deformable_world')
-    gui_options =LaunchConfiguration('gui_options')
+    gui_options = LaunchConfiguration('gui_options')
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
     pybullet_ros_parameters=[
@@ -164,6 +168,7 @@ def generate_launch_description():
             name='robot_state_publisher',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time, 
-                         'robot_description': Command(['xacro',' ', robot_urdf_path])}]
+                         'robot_description': Command(['cat',' ',robot_urdf_path])}],
+            arguments=[robot_urdf_path]
         )
     ])
