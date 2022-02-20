@@ -177,11 +177,11 @@ def generate_launch_description():
             arguments=[robot_urdf]
         ),
         Node(
-            package='point_cloud_gen',
-            executable='gen_point_cloud',
+            package='pointcloud_proc_cpp',
+            executable='gen_pointcloud',
             output='screen',
-            remappings=[('image_cam_info', 'camera/image_cam_info'),
-                        ('point_cloud', 'camera/point_cloud')]
+            remappings=[('image', 'camera/depth/image_raw'),
+                        ('pointcloud', 'camera/point_cloud')]
         ),
         Node(
             package='rviz2',

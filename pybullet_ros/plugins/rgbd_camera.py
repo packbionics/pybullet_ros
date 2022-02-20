@@ -13,7 +13,7 @@ import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from pointcloud_interfaces.msg import ImageCamInfo
+from pointcloud_interfaces.srv import CameraParams
 
 
 class RGBDCamera(Node):
@@ -26,7 +26,7 @@ class RGBDCamera(Node):
         # get robot from parent class
         self.robot = robot
         # create camera info msg placeholder for publication
-        self.image_cam_info_msg = ImageCamInfo()
+        #self.image_cam_info_msg = ImageCamInfo()
         # create image msg placeholder for publication
         self.image_msg = Image()
         self.image_mode = self.declare_parameter('image_mode', 'rgb').value
@@ -55,6 +55,8 @@ class RGBDCamera(Node):
         self.image_msg.encoding = self.declare_parameter('rgbd_camera/resolution/encoding', 'rgb8').value
         self.image_msg.is_bigendian = self.declare_parameter('rgbd_camera/resolution/is_bigendian', 0).value
         self.image_msg.step = self.declare_parameter('rgbd_camera/resolution/step', 1920).value
+        # create service
+        self.camera_params_serv = self.create_service(CameraParams, 'camera/params', self.camera_params_callback)
         # projection matrix
         self.hfov = self.declare_parameter('rgbd_camera/hfov', 56.3).value
         self.vfov = self.declare_parameter('rgbd_camera/vfov', 43.7).value
@@ -62,11 +64,11 @@ class RGBDCamera(Node):
         self.far_plane = self.declare_parameter('rgbd_camera/far_plane', 8).value
         self.projection_matrix = self.compute_projection_matrix()
         # create publisher
-        self.pub_image_camera_info = self.create_publisher(ImageCamInfo, 'camera/image_cam_info', 5)
-        self.image_cam_info_msg.hfov = self.hfov
-        self.image_cam_info_msg.vfov = self.vfov
-        self.image_cam_info_msg.near_plane = self.near_plane
-        self.image_cam_info_msg.far_plane = self.far_plane
+        # self.pub_image_camera_info = self.create_publisher(ImageCamInfo, 'camera/image_cam_info', 5)
+        # self.image_cam_info_msg.hfov = self.hfov
+        # self.image_cam_info_msg.vfov = self.vfov
+        # self.image_cam_info_msg.near_plane = self.near_plane
+        # self.image_cam_info_msg.far_plane = self.far_plane
 
         # use cv_bridge ros to convert cv matrix to ros format
         self.image_bridge = CvBridge()
@@ -78,6 +80,15 @@ class RGBDCamera(Node):
         self.get_logger().info('  far_plane: {}'.format(self.far_plane))
         self.get_logger().info('  resolution: {}x{}'.format(self.image_msg.width, self.image_msg.height))
         self.get_logger().info('  frame_id: {}'.format(self.image_msg.header.frame_id))
+
+    def camera_params_callback(self, request, response):
+        response.hfov = self.hfov
+        response.vfov = self.vfov
+        
+        response.near = self.near_plane
+        response.far = self.far_plane
+
+        return response
 
     def compute_projection_matrix(self):
         return self.pb.computeProjectionMatrix(
@@ -167,8 +178,8 @@ class RGBDCamera(Node):
         self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame, self.image_msg.encoding).data
         # update msg time stamp
         self.image_msg.header.stamp = self.get_clock().now().to_msg()
-        self.image_cam_info_msg.image = self.image_msg
+        #self.image_cam_info_msg.image = self.image_msg
         # publish camera image to ROS network
         self.pub_image.publish(self.image_msg)
-        self.pub_image_camera_info.publish(self.image_cam_info_msg)
-        self.get_logger().info('Published image')
+        #self.pub_image_camera_info.publish(self.image_cam_info_msg)
+        #self.get_logger().info('Published image')
