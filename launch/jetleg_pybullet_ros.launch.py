@@ -1,6 +1,7 @@
 import os
 
 from ament_index_python import get_package_share_directory
+from ament_index_python import get_package_share_path
 from launch_ros.actions import Node
 
 from launch import LaunchDescription
@@ -12,8 +13,10 @@ from launch.substitutions.launch_configuration import LaunchConfiguration
 def generate_launch_description():
 
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
-    description_dir = get_package_share_directory('jetleg_description')
+    description_dir = get_package_share_path('jetleg_description')
     
+    default_model_path = description_dir / 'urdf/testrig.xacro'
+
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
     config_file_arg = DeclareLaunchArgument(
@@ -43,14 +46,10 @@ def generate_launch_description():
             text="True"
         )
     )
-    robot_urdf_path_arg = DeclareLaunchArgument(
-        "robot_urdf_path", 
-        default_value=TextSubstitution(
-            text=os.path.join(
-                description_dir,
-                "robot/urdf/humanoid.urdf"
-            )
-        )
+    model_arg = DeclareLaunchArgument(
+        name='model', 
+        default_value=str(default_model_path),
+        description='Absolute path to robot xacro file'
     )
     pause_simulation_arg = DeclareLaunchArgument(
         "pause_simulation", 
@@ -111,7 +110,7 @@ def generate_launch_description():
     plugin_import_prefix = LaunchConfiguration('plugin_import_prefix')
     environment = LaunchConfiguration('environment')
     pybullet_gui = LaunchConfiguration('pybullet_gui')
-    robot_urdf_path = LaunchConfiguration('robot_urdf_path')
+    robot_xacro_path = LaunchConfiguration('model')
     pause_simulation = LaunchConfiguration('pause_simulation')
     robot_pose_x = LaunchConfiguration('robot_pose_x')
     robot_pose_y = LaunchConfiguration('robot_pose_y')
@@ -122,13 +121,15 @@ def generate_launch_description():
     gui_options = LaunchConfiguration('gui_options')
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
+    robot_urdf = Command(['xacro',' ',LaunchConfiguration('model')])
+
     pybullet_ros_parameters=[
         config_file, 
         {
             "plugin_import_prefix": plugin_import_prefix,
             "environment": environment,
             "pybullet_gui": pybullet_gui,
-            "robot_urdf_path": robot_urdf_path,
+            "robot_urdf_path": robot_xacro_path,
             "pause_simulation": pause_simulation,
             "robot_pose_x": robot_pose_x,
             "robot_pose_y": robot_pose_y,
@@ -146,7 +147,7 @@ def generate_launch_description():
         plugin_import_prefix_arg,
         environment_arg,
         pybullet_gui_arg,
-        robot_urdf_path_arg,
+        model_arg,
         pause_simulation_arg,
         parallel_plugin_execution_arg,
         robot_pose_x_arg,
@@ -168,7 +169,7 @@ def generate_launch_description():
             name='robot_state_publisher',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time, 
-                         'robot_description': Command(['cat',' ',robot_urdf_path])}],
-            arguments=[robot_urdf_path]
+                         'robot_description': robot_urdf}],
+            arguments=[robot_urdf]
         )
     ])
