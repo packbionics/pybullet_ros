@@ -12,7 +12,10 @@ import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
+
 from sensor_msgs.msg import Image
+
+from pointcloud_interfaces.msg import CameraState
 from pointcloud_interfaces.srv import CameraParams
 
 
@@ -25,9 +28,8 @@ class RGBDCamera(Node):
         self.pb = pybullet
         # get robot from parent class
         self.robot = robot
-        # create camera info msg placeholder for publication
-        #self.image_cam_info_msg = ImageCamInfo()
-        # create image msg placeholder for publication
+        # create msg placeholders for publication
+        self.camera_state_msg = CameraState()
         self.image_msg = Image()
         self.image_mode = self.declare_parameter('image_mode', 'rgb').value
         assert self.image_mode in ['rgb', 'rgbd', 'segmentation']
@@ -50,25 +52,20 @@ class RGBDCamera(Node):
             return
         self.pb_camera_link_id = link_names_to_ids_dic[cam_frame_id]
         self.image_msg.header.frame_id = cam_frame_id
-        # create publisher
-        self.pub_image = self.create_publisher(Image, 'camera/depth/image_raw', 10)
+        # create publishers
+        self.pub_camera_state = self.create_publisher(CameraState, 'camera/state', 10)
+        self.pub_image = self.create_publisher(Image, 'camera/depth/image_raw', 2)
         self.image_msg.encoding = self.declare_parameter('rgbd_camera/resolution/encoding', 'rgb8').value
         self.image_msg.is_bigendian = self.declare_parameter('rgbd_camera/resolution/is_bigendian', 0).value
         self.image_msg.step = self.declare_parameter('rgbd_camera/resolution/step', 1920).value
-        # create service
-        self.camera_params_serv = self.create_service(CameraParams, 'camera/params', self.camera_params_callback)
         # projection matrix
         self.hfov = self.declare_parameter('rgbd_camera/hfov', 56.3).value
         self.vfov = self.declare_parameter('rgbd_camera/vfov', 43.7).value
         self.near_plane = self.declare_parameter('rgbd_camera/near_plane', 0.4).value
         self.far_plane = self.declare_parameter('rgbd_camera/far_plane', 8).value
         self.projection_matrix = self.compute_projection_matrix()
-        # create publisher
-        # self.pub_image_camera_info = self.create_publisher(ImageCamInfo, 'camera/image_cam_info', 5)
-        # self.image_cam_info_msg.hfov = self.hfov
-        # self.image_cam_info_msg.vfov = self.vfov
-        # self.image_cam_info_msg.near_plane = self.near_plane
-        # self.image_cam_info_msg.far_plane = self.far_plane
+        # create service
+        self.camera_params_serv = self.create_service(CameraParams, 'camera/params', self.camera_params_callback)
 
         # use cv_bridge ros to convert cv matrix to ros format
         self.image_bridge = CvBridge()
@@ -100,25 +97,12 @@ class RGBDCamera(Node):
                     farVal=self.far_plane)
 
     def extract_frame(self, camera_image):
-
-        bgr_image = np.zeros((self.image_msg.height, self.image_msg.width, 3))
-
         camera_image = np.reshape(camera_image[2], (camera_image[1], camera_image[0], 4))
 
-        bgr_image[:, :, 2] =\
-            (1 - camera_image[:, :, 3]) * camera_image[:, :, 2] +\
-            camera_image[:, :, 3] * camera_image[:, :, 2]
-
-        bgr_image[:, :, 1] =\
-            (1 - camera_image[:, :, 3]) * camera_image[:, :, 1] +\
-            camera_image[:, :, 3] * camera_image[:, :, 1]
-
-        bgr_image[:, :, 0] =\
-            (1 - camera_image[:, :, 3]) * camera_image[:, :, 0] +\
-            camera_image[:, :, 3] * camera_image[:, :, 0]
+        rgb_image = camera_image[:,:,:3]
 
         # return frame
-        return bgr_image.astype(np.uint8)
+        return rgb_image.astype(np.uint8)
 
     def extract_depth(self, camera_image):
         # Extract depth buffer
@@ -152,13 +136,9 @@ class RGBDCamera(Node):
         # target is a point 5m ahead of the robot camera expressed w.r.t world reference frame
         target = self.compute_camera_target(cam_state[0], cam_state[1])
         view_matrix = self.pb.computeViewMatrix(cam_state[0], target, [0, 0, 1])
-        #TODO: compute camera matrix from projection and view matrix
-        #camera_matrix = np.reshape(self.projection_matrix, (1,16))
 
-        #self.get_logger().info(str(camera_matrix[0][0:4]))
-        #self.get_logger().info(str(camera_matrix[0][4:8]))
-        #self.get_logger().info(str(camera_matrix[0][8:12]))
-        #self.get_logger().info(str(camera_matrix[0][12:16]))
+        self.camera_state_msg.translation = cam_state[0]
+        self.camera_state_msg.rotation = cam_state[1]
 
         # get camera image from pybullet
         pybullet_cam_resp = self.pb.getCameraImage(self.image_msg.width,
@@ -178,8 +158,7 @@ class RGBDCamera(Node):
         self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame, self.image_msg.encoding).data
         # update msg time stamp
         self.image_msg.header.stamp = self.get_clock().now().to_msg()
-        #self.image_cam_info_msg.image = self.image_msg
         # publish camera image to ROS network
+        self.pub_camera_state.publish(self.camera_state_msg)
         self.pub_image.publish(self.image_msg)
-        #self.pub_image_camera_info.publish(self.image_cam_info_msg)
         #self.get_logger().info('Published image')

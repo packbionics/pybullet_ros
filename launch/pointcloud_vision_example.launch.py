@@ -181,7 +181,8 @@ def generate_launch_description():
             executable='gen_pointcloud',
             output='screen',
             remappings=[('image', 'camera/depth/image_raw'),
-                        ('pointcloud', 'camera/point_cloud')]
+                        ('pointcloud', 'camera/point_cloud'),
+                        ('camera_state', 'camera/state')]
         ),
         Node(
             package='rviz2',
