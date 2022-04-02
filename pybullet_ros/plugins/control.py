@@ -73,10 +73,9 @@ class Control(Node):
         self.velocity_joint_commands = []
         self.effort_joint_commands = []
         # this parameter will be set for all robot joints
-        max_effort = self.get_parameter('max_effort').value
-        self.get_logger().info("Control: Max effort={}".format(max_effort))
-        # the max force to apply to the joint, used in velocity control
-        self.force_commands = []
+        self.max_effort = self.get_parameter('max_effort').value
+        self.get_logger().info("Control: Max effort={}".format(self.max_effort))
+
         # get joints names and store them in dictionary, combine both revolute and prismatic dic
         for k in kargs.keys():
             self.get_logger().info(k)
@@ -91,8 +90,6 @@ class Control(Node):
             self.position_joint_commands.append(0.0)
             self.velocity_joint_commands.append(0.0)
             self.effort_joint_commands.append(0.0)
-            # used only in velocity and position control mode
-            self.force_commands.append(max_effort)
             # get joint name from dictionary, is used for naming the subscriber
             joint_name = self.joint_index_name_dic[joint_index]
             # create list of joints for later use in pve_ctrl_cmd(...)
@@ -111,17 +108,27 @@ class Control(Node):
         self.position_ctrl_joint_indices = []
         self.velocity_ctrl_joint_indices = []
         self.effort_ctrl_joint_indices = []
-    
+        
+        self.position_joint_commands = []
+        self.velocity_joint_commands = []
+        self.effort_joint_commands = []
+        
+        # the max force to apply to the joint
+        self.pos_force_commands = []
+        self.vel_force_commands = []
+
         # create arrays for motor control, position is prioritized first, velocity second, effort third
         for index, subscriber in enumerate(self.pc_subscribers):
             if subscriber.get_is_data_available():
                 self.position_joint_commands.append(subscriber.get_last_cmd())
                 self.position_ctrl_joint_indices.append(self.joint_indices[index])
+                self.pos_force_commands.append(self.max_effort)
  
         for index, subscriber in enumerate(self.vc_subscribers):
             if subscriber.get_is_data_available() and index not in self.position_ctrl_joint_indices:
                 self.velocity_joint_commands.append(subscriber.get_last_cmd())
                 self.velocity_ctrl_joint_indices.append(self.joint_indices[index])
+                self.vel_force_commands.append(self.max_effort)
                 
         for index, subscriber in enumerate(self.ec_subscribers):
             if (subscriber.get_is_data_available() 
@@ -135,10 +142,10 @@ class Control(Node):
         
         # position control
         self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.position_ctrl_joint_indices,
-                                    controlMode=self.pb.POSITION_CONTROL, targetPositions=self.position_joint_commands, forces=self.force_commands)
+                                    controlMode=self.pb.POSITION_CONTROL, targetPositions=self.position_joint_commands, forces=self.pos_force_commands)
         # velocity control
         self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.velocity_ctrl_joint_indices,
-                                    controlMode=self.pb.VELOCITY_CONTROL, targetVelocities=self.velocity_joint_commands, forces=self.force_commands)
+                                    controlMode=self.pb.VELOCITY_CONTROL, targetVelocities=self.velocity_joint_commands, forces=self.vel_force_commands)
         # effort control
         self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.effort_ctrl_joint_indices,
                                     controlMode=self.pb.POSITION_CONTROL, forces=[0.0] * len(self.effort_joint_commands))
