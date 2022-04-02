@@ -15,7 +15,7 @@ class Environment:
         self.node = pybullet_ros_node
         self.pb = self.node.pb
         # enable soft body simulation if needed
-        if self.node.declare_parameter('use_deformable_world', False).value:
+        if self.node.get_parameter('use_deformable_world').value:
             self.node.get_logger().info('Using deformable world (soft body simulation)')
             self.pb.resetSimulation(self.pb.RESET_USE_DEFORMABLE_WORLD)
 
@@ -24,7 +24,7 @@ class Environment:
         set gravity, ground plane and load URDF or SDF models as required
         """
         # set gravity
-        gravity = self.node.declare_parameter('gravity', -9.81).value # get gravity from param server
+        gravity = self.node.get_parameter('gravity').value # get gravity from param server
         self.pb.setGravity(0, 0, gravity)
         # set floor
         self.pb.loadURDF('plane.urdf')

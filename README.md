@@ -1,6 +1,6 @@
 # pybullet_ros
 
-A bridge between [ROS2](https://www.ros.org/) and [PyBullet](https://pybullet.org/wordpress/)
+A bridge between [ROS2](https://www.ros.org/) and [PyBullet](https://pybullet.org/wordpress/)  
 Forked from [oscar-lima/pybullet_ros](https://github.com/oscar-lima/pybullet_ros)
 
 <img src="https://github.com/oscar-lima/pybullet_ros/blob/noetic/common/images/r2d2_rviz.png" alt="drawing" width="600"/>
@@ -17,29 +17,26 @@ Missing:
 
 - sensors: Laser scanner, RGB camera image, Depth information (pointcloud)
 - [sdf](http://sdformat.org) support
-- Full ROS2 Support (WIP)
+- Full ROS2 Support
 
 Main implementation is done [here](https://github.com/oscar-lima/pybullet_ros/blob/noetic/ros/src/pybullet_ros/pybullet_ros.py)
 
-## Installation (ROS1)
+## Installation
 
-The following instructions have been tested under ubuntu 20.04 and [ROS noetic](http://wiki.ros.org/noetic/Installation/Ubuntu).
+The following instructions have been tested under ubuntu 20.04 and ROS2 Foxy
 
 This wrapper requires that you have pybullet installed, you can do so by executing:
 
         sudo -H pip3 install pybullet
 
-Additionally clone this repository inside your [catkin workspace](http://wiki.ros.org/catkin/Tutorials/create_a_workspace),
-compile (catkin build) and source your devel workspace (as you would normally do with any ROS pkg).
-
-In case you need to simulate RGBD sensor then install opencv for python3 and ros cv bridge:
-
-        sudo -H pip3 install opencv-python
-        sudo apt install ros-noetic-cv-bridge
+Additionally clone this repository inside your ROS2 workspace
+compile (colon build) and source your devel workspace (as you would normally do with any ROS2 package).
 
 ## Test the simulator
 
-We provide with 2 robots for testing purposes: acrobat and r2d2, they can be found [here](https://github.com/oscar-lima/pybullet_ros/tree/noetic/common/test/urdf).
+Two robots from the original repo are available for testing purposes: acrobat and r2d2, they can be found [here](https://github.com/oscar-lima/pybullet_ros/tree/noetic/common/test/urdf).
+
+Additionally, a cartpole robot is available from [cartpole_description](https://github.com/packbionics/cartpole)
 
 ### Bringup r2d2 robot
 
@@ -54,14 +51,6 @@ You should now be able to visualise the robot in a gui.
 Publish a float msg to the following topic:
 
         ros2 topic pub /head_swivel_position_controller/command std_msgs/Float64 "data: 1.0" --once
-
-Move in position control with convenient gui:
-
-        ros2 launch pybullet_ros position_cmd_gui.launch.py
-
-A gui will pop up, use the slides to control the angle of your robot joints in position control.
-
-NOTE: This gui should not be active while sending velocity of effort commands!
 
 ### Send joint velocity or effort (torque) control commands to the robot.
 

@@ -9,7 +9,6 @@ from ament_index_python import get_package_share_directory
 def generate_launch_description():
 
     share_dir = get_package_share_directory('pybullet_ros')
-    desc_share_dir = get_package_share_directory('cartpole_description')
     
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
@@ -44,8 +43,8 @@ def generate_launch_description():
         "robot_urdf_path", 
         default_value=TextSubstitution(
             text=os.path.join(
-                desc_share_dir,
-                "robot/urdf/robot.urdf"
+                share_dir,
+                "common/test/urdf/r2d2_robot/r2d2.urdf.xacro"
             )
         )
     )
@@ -76,7 +75,7 @@ def generate_launch_description():
     robot_pose_z_arg = DeclareLaunchArgument(
         "robot_pose_z", 
         default_value=TextSubstitution(
-            text="0.1"
+            text="1.0"
         )
     )
     robot_pose_yaw_arg = DeclareLaunchArgument(
@@ -165,6 +164,6 @@ def generate_launch_description():
             name='robot_state_publisher',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time, 
-                         'robot_description': robot_urdf_path}]
+                         'robot_description': Command(['xacro',' ', robot_urdf_path])}]
         )
     ])

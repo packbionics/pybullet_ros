@@ -9,7 +9,7 @@ from std_msgs.msg import Float64
 
 # NOTE: 2 classes are implemented here, scroll down to the next class (Control) to see the plugin!
 
-class pveControl:
+class PveControl:
     """helper class to receive position, velocity or effort (pve) control commands"""
     def __init__(self, node, joint_index, joint_name, controller_type):
         """constructor
@@ -59,8 +59,9 @@ class pveControl:
 # plugin is implemented below
 class Control(Node):
     def __init__(self, pybullet, robot, **kargs):
-        super().__init__('pybullet_ros_control')
-        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        super().__init__('pybullet_ros_control',
+                         automatically_declare_parameters_from_overrides=True)
+        self.rate = self.get_parameter('loop_rate').value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
 
         # get "import pybullet as pb" and store in self.pb
@@ -72,16 +73,13 @@ class Control(Node):
         self.velocity_joint_commands = []
         self.effort_joint_commands = []
         # this parameter will be set for all robot joints
-        if self.has_parameter('max_effort_vel_mode'):
-            self.get_logger().warn('max_effort_vel_mode parameter is deprecated, please use max_effort instead')
-            # kept for backwards compatibility, delete after some time
-            max_effort = self.declare_parameter('max_effort_vel_mode', 100.0).value
-        else:
-            max_effort = self.declare_parameter('max_effort', 100.0).value
-            self.get_logger().info("Control: Max effort={}".format(max_effort))
+        max_effort = self.get_parameter('max_effort').value
+        self.get_logger().info("Control: Max effort={}".format(max_effort))
         # the max force to apply to the joint, used in velocity control
         self.force_commands = []
         # get joints names and store them in dictionary, combine both revolute and prismatic dic
+        for k in kargs.keys():
+            self.get_logger().info(k)
         self.joint_index_name_dic = {**kargs['rev_joints'], **kargs['prism_joints']}
         # setup subscribers
         self.pc_subscribers = []
@@ -100,11 +98,11 @@ class Control(Node):
             # create list of joints for later use in pve_ctrl_cmd(...)
             self.joint_indices.append(joint_index)
             # create position control object
-            self.pc_subscribers.append(pveControl(self, joint_index, joint_name, 'position'))
+            self.pc_subscribers.append(PveControl(self, joint_index, joint_name, 'position'))
             # create position control object
-            self.vc_subscribers.append(pveControl(self, joint_index, joint_name, 'velocity'))
+            self.vc_subscribers.append(PveControl(self, joint_index, joint_name, 'velocity'))
             # create position control object
-            self.ec_subscribers.append(pveControl(self, joint_index, joint_name, 'effort'))
+            self.ec_subscribers.append(PveControl(self, joint_index, joint_name, 'effort'))
 
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
