@@ -107,38 +107,42 @@ class Control(Node):
             self.ec_subscribers.append(pveControl(self, joint_index, joint_name, 'effort'))
 
     def execute(self):
-        
-        # TODO: would like to have different control modes for different joints
         """this function gets called from pybullet ros main update loop"""
         """check if user has commanded a joint and forward the request to pybullet"""
-        # flag to indicate there are pending position control tasks
-        position_ctrl_task = False
-        velocity_ctrl_task = False
-        effort_ctrl_task = False
+        
+        self.position_ctrl_joint_indices = []
+        self.velocity_ctrl_joint_indices = []
+        self.effort_ctrl_joint_indices = []
+    
+        # create arrays for motor control, position is prioritized first, velocity second, effort third
         for index, subscriber in enumerate(self.pc_subscribers):
             if subscriber.get_is_data_available():
-                self.position_joint_commands[index] = subscriber.get_last_cmd()
-                position_ctrl_task = True
+                self.position_joint_commands.append(subscriber.get_last_cmd())
+                self.position_ctrl_joint_indices.append(self.joint_indices[index])
+ 
         for index, subscriber in enumerate(self.vc_subscribers):
-            if subscriber.get_is_data_available():
-                self.velocity_joint_commands[index] = subscriber.get_last_cmd()
-                velocity_ctrl_task = True
-        for index, subscriber in enumerate(self.ec_subscribers):
-            if subscriber.get_is_data_available():
-                self.effort_joint_commands[index] = subscriber.get_last_cmd()
-                effort_ctrl_task = True
+            if subscriber.get_is_data_available() and index not in self.position_ctrl_joint_indices:
+                self.velocity_joint_commands.append(subscriber.get_last_cmd())
+                self.velocity_ctrl_joint_indices.append(self.joint_indices[index])
                 
-        self.get_logger().info("position_ctrl_task={}, velocity_ctrl_task={}, effort_ctrl_task={}".format(position_ctrl_task, velocity_ctrl_task, effort_ctrl_task))
-        # forward commands to pybullet, give priority to position control cmds, then vel, at last effort
-        if position_ctrl_task:
-            self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
-                                     controlMode=self.pb.POSITION_CONTROL, targetPositions=self.position_joint_commands, forces=self.force_commands)
-        elif velocity_ctrl_task:
-            self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
-                                     controlMode=self.pb.VELOCITY_CONTROL, targetVelocities=self.velocity_joint_commands, forces=self.force_commands)
-        elif effort_ctrl_task:
-            #self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
-            #               controlMode=self.pb.POSITION_CONTROL, targetPositions=[0.0] * len(self.effort_joint_commands), 
-            #               forces=[0.0] * len(self.effort_joint_commands))
-            self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
-                                     controlMode=self.pb.TORQUE_CONTROL, forces=self.effort_joint_commands)
+        for index, subscriber in enumerate(self.ec_subscribers):
+            if (subscriber.get_is_data_available() 
+                and index not in self.position_ctrl_joint_indices 
+                and index not in self.velocity_ctrl_joint_indices):
+                
+                self.effort_joint_commands.append(subscriber.get_last_cmd())
+                self.effort_ctrl_joint_indices.append(self.joint_indices[index])
+                
+        # forward commands to pybullet
+        
+        # position control
+        self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.position_ctrl_joint_indices,
+                                    controlMode=self.pb.POSITION_CONTROL, targetPositions=self.position_joint_commands, forces=self.force_commands)
+        # velocity control
+        self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.velocity_ctrl_joint_indices,
+                                    controlMode=self.pb.VELOCITY_CONTROL, targetVelocities=self.velocity_joint_commands, forces=self.force_commands)
+        # effort control
+        self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.effort_ctrl_joint_indices,
+                                    controlMode=self.pb.POSITION_CONTROL, forces=[0.0] * len(self.effort_joint_commands))
+        self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.effort_ctrl_joint_indices,
+                                    controlMode=self.pb.TORQUE_CONTROL, forces=self.effort_joint_commands)
