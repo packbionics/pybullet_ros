@@ -107,6 +107,8 @@ class Control(Node):
             self.ec_subscribers.append(pveControl(self, joint_index, joint_name, 'effort'))
 
     def execute(self):
+        
+        # TODO: would like to have different control modes for different joints
         """this function gets called from pybullet ros main update loop"""
         """check if user has commanded a joint and forward the request to pybullet"""
         # flag to indicate there are pending position control tasks
@@ -125,6 +127,8 @@ class Control(Node):
             if subscriber.get_is_data_available():
                 self.effort_joint_commands[index] = subscriber.get_last_cmd()
                 effort_ctrl_task = True
+                
+        self.get_logger().info("position_ctrl_task={}, velocity_ctrl_task={}, effort_ctrl_task={}".format(position_ctrl_task, velocity_ctrl_task, effort_ctrl_task))
         # forward commands to pybullet, give priority to position control cmds, then vel, at last effort
         if position_ctrl_task:
             self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
@@ -133,7 +137,8 @@ class Control(Node):
             self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
                                      controlMode=self.pb.VELOCITY_CONTROL, targetVelocities=self.velocity_joint_commands, forces=self.force_commands)
         elif effort_ctrl_task:
+            #self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
+            #               controlMode=self.pb.POSITION_CONTROL, targetPositions=[0.0] * len(self.effort_joint_commands), 
+            #               forces=[0.0] * len(self.effort_joint_commands))
             self.pb.setJointMotorControlArray(bodyUniqueId=self.robot, jointIndices=self.joint_indices,
                                      controlMode=self.pb.TORQUE_CONTROL, forces=self.effort_joint_commands)
-    
-# TODO: decouple cart and pole joint control modes
