@@ -3,6 +3,9 @@ import os
 from ament_index_python import get_package_share_directory
 from ament_index_python import get_package_share_path
 from launch_ros.actions import Node
+from launch_ros.actions import ComposableNodeContainer
+
+from launch_ros.descriptions import ComposableNode
 
 from launch import LaunchDescription
 from launch.actions.declare_launch_argument import DeclareLaunchArgument
@@ -15,7 +18,8 @@ def generate_launch_description():
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
     description_dir = get_package_share_path('jetleg_description')
     
-    default_model_path = description_dir / 'urdf/wheeled_testrig.xacro'
+    default_model_path = description_dir / 'urdf/testrig_vision.xacro'
+    rviz_config_file = os.path.join(pybullet_ros_dir, 'config/pybullet_pointcloud_vision_config.rviz')
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
@@ -24,7 +28,7 @@ def generate_launch_description():
         default_value=TextSubstitution(
             text=os.path.join(
                 pybullet_ros_dir, 
-                "config/jetleg_params.yaml"
+                "config/jetleg_pybullet_vision_params.yaml"
             )
         )
     )
@@ -137,7 +141,7 @@ def generate_launch_description():
             "robot_pose_yaw": robot_pose_yaw,
             "fixed_base": fixed_base,
             "use_deformable_world": use_deformable_world,
-            "gui_options": gui_options,
+            #"gui_options": gui_options, FIXME: CAUSES ERROR WHEN WHEN RUNNING LAUNCH FILE
             "use_sim_time": use_sim_time
         }
     ]
@@ -148,7 +152,7 @@ def generate_launch_description():
         environment_arg,
         pybullet_gui_arg,
         model_arg,
-        pause_simulation_arg,
+        pause_simulation_arg, 
         parallel_plugin_execution_arg,
         robot_pose_x_arg,
         robot_pose_y_arg,
@@ -171,5 +175,19 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time, 
                          'robot_description': robot_urdf}],
             arguments=[robot_urdf]
+        ),
+        Node(
+            package='pointcloud_proc_cpp',
+            executable='gen_pointcloud',
+            output='screen',
+            remappings=[('image', 'camera/depth/image_raw'),
+                        ('pointcloud', 'camera/point_cloud'),
+                        ('camera_state', 'camera/state')]
+        ),
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            output='screen',
+            arguments=['-d', rviz_config_file]
         )
     ])

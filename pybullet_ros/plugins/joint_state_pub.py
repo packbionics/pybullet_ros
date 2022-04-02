@@ -17,11 +17,12 @@ class JointStatePub(Node):
         self.pb = pybullet
         # get robot from parent class
         self.robot = robot
-
-        # get joints names and store them in dictionary
-        rev_joints = kargs['rev_joints']
-        prism_joints = kargs['prism_joints']
-        self.joint_index_name_dic = {**rev_joints, **prism_joints}
+        # get revolute joints names and store them in dictionary
+        self.rev_joint_index_name_dic = kargs['rev_joints']
+        # get prismatic joints names and store them in dictionary
+        self.prism_joint_index_name_dic = kargs['prism_joints']
+        # combine dictionaries of revolute and prismatic joints
+        self.joint_index_name_dic = {**self.prism_joint_index_name_dic, **self.rev_joint_index_name_dic}
         # register this node in the network as a publisher in /joint_states topic
         self.pub_joint_states = self.create_publisher(JointState, 'joint_states', 1)
 
