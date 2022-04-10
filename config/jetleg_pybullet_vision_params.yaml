@@ -37,5 +37,5 @@
     rgbd_camera/resolution/step: 1280
     rgbd_camera/hfov: 110.0
     rgbd_camera/vfov: 70.0
-    rgbd_camera/near_plane: 0.2
+    rgbd_camera/near_plane: 1.0
     rgbd_camera/far_plane: 20.0

@@ -10,10 +10,16 @@ from re import S
 
 import numpy as np
 import rclpy
-import cv2
 from cv_bridge import CvBridge
 from rclpy.node import Node
+
 from sensor_msgs.msg import Image
+
+from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point
+from geometry_msgs.msg import Quaternion
+
+from pointcloud_interfaces.srv import CameraParams
 
 
 class RGBDCamera(Node):
@@ -25,7 +31,10 @@ class RGBDCamera(Node):
         self.pb = pybullet
         # get robot from parent class
         self.robot = robot
-        # create image msg placeholder for publication
+        # create msg placeholders for publication
+        self.camera_pose_msg = PoseStamped()
+        self.camera_position = Point()
+        self.camera_orientation = Quaternion()
         self.image_msg = Image()
         self.image_mode = self.declare_parameter('image_mode', 'rgb').value
         assert self.image_mode in ['rgb', 'rgbd', 'segmentation']
@@ -48,8 +57,9 @@ class RGBDCamera(Node):
             return
         self.pb_camera_link_id = link_names_to_ids_dic[cam_frame_id]
         self.image_msg.header.frame_id = cam_frame_id
-        # create publisher
-        self.pub_image = self.create_publisher(Image, 'rgb_image', 10)
+        # create publishers
+        self.pub_camera_state = self.create_publisher(PoseStamped, 'camera/state', 2)
+        self.pub_image = self.create_publisher(Image, 'camera/depth/image_raw', 2)
         self.image_msg.encoding = self.declare_parameter('rgbd_camera/resolution/encoding', 'rgb8').value
         self.image_msg.is_bigendian = self.declare_parameter('rgbd_camera/resolution/is_bigendian', 0).value
         self.image_msg.step = self.declare_parameter('rgbd_camera/resolution/step', 1920).value
@@ -59,6 +69,9 @@ class RGBDCamera(Node):
         self.near_plane = self.declare_parameter('rgbd_camera/near_plane', 0.4).value
         self.far_plane = self.declare_parameter('rgbd_camera/far_plane', 8).value
         self.projection_matrix = self.compute_projection_matrix()
+        # create service
+        self.camera_params_serv = self.create_service(CameraParams, 'camera/params', self.camera_params_callback)
+
         # use cv_bridge ros to convert cv matrix to ros format
         self.image_bridge = CvBridge()
 
@@ -70,6 +83,16 @@ class RGBDCamera(Node):
         self.get_logger().info('  resolution: {}x{}'.format(self.image_msg.width, self.image_msg.height))
         self.get_logger().info('  frame_id: {}'.format(self.image_msg.header.frame_id))
 
+    def camera_params_callback(self, request, response):
+        response.hfov = self.hfov
+        response.vfov = self.vfov
+        
+        response.near = self.near_plane
+        response.far = self.far_plane
+
+        self.get_logger().info('sending service response...')
+        return response
+
     def compute_projection_matrix(self):
         return self.pb.computeProjectionMatrix(
                     left=-math.tan(math.pi * self.hfov / 360.0) * self.near_plane,
@@ -80,31 +103,26 @@ class RGBDCamera(Node):
                     farVal=self.far_plane)
 
     def extract_frame(self, camera_image):
-
-        bgr_image = np.zeros((self.image_msg.height, self.image_msg.width, 3))
-
         camera_image = np.reshape(camera_image[2], (camera_image[1], camera_image[0], 4))
 
-        bgr_image[:, :, 2] =\
-            (1 - camera_image[:, :, 3]) * camera_image[:, :, 2] +\
-            camera_image[:, :, 3] * camera_image[:, :, 2]
-
-        bgr_image[:, :, 1] =\
-            (1 - camera_image[:, :, 3]) * camera_image[:, :, 1] +\
-            camera_image[:, :, 3] * camera_image[:, :, 1]
-
-        bgr_image[:, :, 0] =\
-            (1 - camera_image[:, :, 3]) * camera_image[:, :, 0] +\
-            camera_image[:, :, 3] * camera_image[:, :, 0]
+        rgb_image = camera_image[:,:,:3]
 
         # return frame
-        return bgr_image.astype(np.uint8)
+        return rgb_image.astype(np.uint8)
 
     def extract_depth(self, camera_image):
         # Extract depth buffer
         depth_buffer = np.reshape(camera_image[3], (camera_image[1], camera_image[0]))
-        # Convert from floating-point to uint8 and return result
-        return (depth_buffer*255).astype(np.uint8)
+
+        if self.image_msg.encoding == '8UC1':
+            # Convert from floating-point to 8-bit format and return result
+            return (depth_buffer*255).astype(np.uint8)
+        elif self.image_msg.encoding == 'mono16':
+            # Convert from floating-point to 16-bit format and return result
+            return (depth_buffer*(255**2)).astype(np.uint16)
+        else:
+            # no conversion
+            return depth_buffer
 
     def compute_camera_target(self, camera_position, camera_orientation):
         """
@@ -124,6 +142,20 @@ class RGBDCamera(Node):
         # target is a point 5m ahead of the robot camera expressed w.r.t world reference frame
         target = self.compute_camera_target(cam_state[0], cam_state[1])
         view_matrix = self.pb.computeViewMatrix(cam_state[0], target, [0, 0, 1])
+
+        self.camera_position.x = cam_state[0][0]
+        self.camera_position.y = cam_state[0][1]
+        self.camera_position.z = cam_state[0][2]
+
+        self.camera_orientation.x = cam_state[1][0]
+        self.camera_orientation.y = cam_state[1][1]
+        self.camera_orientation.z = cam_state[1][2]
+        self.camera_orientation.w = cam_state[1][3]
+
+        self.camera_pose_msg.header.stamp = self.get_clock().now().to_msg()
+        self.camera_pose_msg.pose.position = self.camera_position
+        self.camera_pose_msg.pose.orientation = self.camera_orientation
+
         # get camera image from pybullet
         pybullet_cam_resp = self.pb.getCameraImage(self.image_msg.width,
                                                     self.image_msg.height,
@@ -139,9 +171,10 @@ class RGBDCamera(Node):
             #print(frame)
 
         # fill pixel data array
-        self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame, encoding='passthrough').data
-        # update msg time stamp and frame id
+        self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame, self.image_msg.encoding).data
+        # update msg time stamp
         self.image_msg.header.stamp = self.get_clock().now().to_msg()
         # publish camera image to ROS network
+        self.pub_camera_state.publish(self.camera_pose_msg)
         self.pub_image.publish(self.image_msg)
-        self.get_logger().info('Published image')
+        #self.get_logger().info('Published image')

@@ -3,6 +3,9 @@ import os
 from ament_index_python import get_package_share_directory
 from ament_index_python import get_package_share_path
 from launch_ros.actions import Node
+from launch_ros.actions import ComposableNodeContainer
+
+from launch_ros.descriptions import ComposableNode
 
 from launch import LaunchDescription
 from launch.actions.declare_launch_argument import DeclareLaunchArgument
@@ -16,6 +19,7 @@ def generate_launch_description():
     description_dir = get_package_share_path('jetleg_description')
     
     default_model_path = description_dir / 'urdf/testrig_vision.xacro'
+    rviz_config_file = os.path.join(pybullet_ros_dir, 'config/pybullet_pointcloud_vision_config.rviz')
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
@@ -171,5 +175,20 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time, 
                          'robot_description': robot_urdf}],
             arguments=[robot_urdf]
+        ),
+        Node(
+            package='pointcloud_proc_cpp',
+            executable='gen_pointcloud',
+            output='screen',
+            remappings=[('image', 'camera/depth/image_raw'),
+                        ('pointcloud', '/zed2i/zed_node/point_cloud/cloud_registered'),
+                        ('camera_state', 'camera/state'),
+                        ('camera_params', 'camera/params')]
+        ),
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            output='screen',
+            arguments=['-d', rviz_config_file]
         )
     ])
