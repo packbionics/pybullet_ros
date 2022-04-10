@@ -32,9 +32,9 @@
     image_mode:             rgbd
     rgbd_camera/frame_id:   camera_link
     rgbd_camera/resolution/encoding: 8UC1
-    rgbd_camera/resolution/width:  320
-    rgbd_camera/resolution/height: 240
-    rgbd_camera/resolution/step: 320
+    rgbd_camera/resolution/width:  1280
+    rgbd_camera/resolution/height: 720
+    rgbd_camera/resolution/step: 1280
     rgbd_camera/hfov: 110.0
     rgbd_camera/vfov: 70.0
     rgbd_camera/near_plane: 1.0
