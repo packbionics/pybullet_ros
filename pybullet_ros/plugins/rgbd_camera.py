@@ -15,7 +15,10 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import Image
 
-from pointcloud_interfaces.msg import CameraState
+from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point
+from geometry_msgs.msg import Quaternion
+
 from pointcloud_interfaces.srv import CameraParams
 
 
@@ -29,7 +32,9 @@ class RGBDCamera(Node):
         # get robot from parent class
         self.robot = robot
         # create msg placeholders for publication
-        self.camera_state_msg = CameraState()
+        self.camera_pose_msg = PoseStamped()
+        self.camera_position = Point()
+        self.camera_orientation = Quaternion()
         self.image_msg = Image()
         self.image_mode = self.declare_parameter('image_mode', 'rgb').value
         assert self.image_mode in ['rgb', 'rgbd', 'segmentation']
@@ -53,7 +58,7 @@ class RGBDCamera(Node):
         self.pb_camera_link_id = link_names_to_ids_dic[cam_frame_id]
         self.image_msg.header.frame_id = cam_frame_id
         # create publishers
-        self.pub_camera_state = self.create_publisher(CameraState, 'camera/state', 10)
+        self.pub_camera_state = self.create_publisher(PoseStamped, 'camera/state', 2)
         self.pub_image = self.create_publisher(Image, 'camera/depth/image_raw', 2)
         self.image_msg.encoding = self.declare_parameter('rgbd_camera/resolution/encoding', 'rgb8').value
         self.image_msg.is_bigendian = self.declare_parameter('rgbd_camera/resolution/is_bigendian', 0).value
@@ -85,6 +90,7 @@ class RGBDCamera(Node):
         response.near = self.near_plane
         response.far = self.far_plane
 
+        self.get_logger().info('sending service response...')
         return response
 
     def compute_projection_matrix(self):
@@ -137,8 +143,18 @@ class RGBDCamera(Node):
         target = self.compute_camera_target(cam_state[0], cam_state[1])
         view_matrix = self.pb.computeViewMatrix(cam_state[0], target, [0, 0, 1])
 
-        self.camera_state_msg.translation = cam_state[0]
-        self.camera_state_msg.rotation = cam_state[1]
+        self.camera_position.x = cam_state[0][0]
+        self.camera_position.y = cam_state[0][1]
+        self.camera_position.z = cam_state[0][2]
+
+        self.camera_orientation.x = cam_state[1][0]
+        self.camera_orientation.y = cam_state[1][1]
+        self.camera_orientation.z = cam_state[1][2]
+        self.camera_orientation.w = cam_state[1][3]
+
+        self.camera_pose_msg.header.stamp = self.get_clock().now().to_msg()
+        self.camera_pose_msg.pose.position = self.camera_position
+        self.camera_pose_msg.pose.orientation = self.camera_orientation
 
         # get camera image from pybullet
         pybullet_cam_resp = self.pb.getCameraImage(self.image_msg.width,
@@ -159,6 +175,6 @@ class RGBDCamera(Node):
         # update msg time stamp
         self.image_msg.header.stamp = self.get_clock().now().to_msg()
         # publish camera image to ROS network
-        self.pub_camera_state.publish(self.camera_state_msg)
+        self.pub_camera_state.publish(self.camera_pose_msg)
         self.pub_image.publish(self.image_msg)
         #self.get_logger().info('Published image')

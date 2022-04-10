@@ -181,8 +181,9 @@ def generate_launch_description():
             executable='gen_pointcloud',
             output='screen',
             remappings=[('image', 'camera/depth/image_raw'),
-                        ('pointcloud', 'camera/point_cloud'),
-                        ('camera_state', 'camera/state')]
+                        ('pointcloud', '/zed2i/zed_node/point_cloud/cloud_registered'),
+                        ('camera_state', 'camera/state'),
+                        ('camera_params', 'camera/params')]
         ),
         Node(
             package='rviz2',
