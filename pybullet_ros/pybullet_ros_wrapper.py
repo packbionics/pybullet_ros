@@ -165,12 +165,31 @@ class pyBulletRosWrapper(Node):
             urdf_path_without_xacro = urdf_path[0:urdf_path.find('.xacro')]+urdf_path[urdf_path.find('.xacro')+len('.xacro'):]
             os.system(f'xacro {urdf_path} -o {urdf_path_without_xacro}')
             urdf_path = urdf_path_without_xacro
+        # get from param server the path to the URDF obstacle model
+        obstacle_path = self.declare_parameter('obstacle_urdf_path', None).value
+        if obstacle_path == None:
+            self.get_logger().info('optional param obstacle_urdf_path not set, will continue without obstacles')
+        # test obstacle urdf file existance
+        if obstacle_path != None and not os.path.isfile(urdf_path):
+            self.get_logger().error('param obstacle_urdf_path is set, but file does not exist : ' + obstacle_path)
+        # ensure urdf is not xacro, but if it is then make urdf file version out of it
+        if obstacle_path != None and 'xacro' in obstacle_path:
+            # remove xacro from name
+            obstacle_path_without_xacro = obstacle_path[0:obstacle_path.find('.xacro')]+obstacle_path[obstacle_path.find('.xacro')+len('.xacro'):] + '.urdf'
+            os.system(f'xacro {obstacle_path} -o {obstacle_path_without_xacro}')
+            obstacle_path = obstacle_path_without_xacro
         # get robot spawn pose from parameter server
         robot_pose_x = self.declare_parameter('robot_pose_x', 0.0).value
         robot_pose_y = self.declare_parameter('robot_pose_y', 0.0).value
         robot_pose_z = self.declare_parameter('robot_pose_z', 1.0).value
-        robot_pose_yaw = self.declare_parameter('robot_pose_yaw', 0.0).value
+        robot_pose_yaw = self.declare_parameter('robot_pose_yaw', 0.0).value        
         robot_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, robot_pose_yaw])
+        # get obstacle spawn pose from parameter server
+        obstacle_pose_x = self.declare_parameter('obstacle_pose_x', 5.0).value
+        obstacle_pose_y = self.declare_parameter('obstacle_pose_y', 0.0).value
+        obstacle_pose_z = self.declare_parameter('obstacle_pose_z', 1.0).value
+        obstacle_pose_yaw = self.declare_parameter('obstacle_pose_yaw', 0.0).value
+        obstacle_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, obstacle_pose_yaw])
         fixed_base = self.declare_parameter('fixed_base', False).value
         # load robot from URDF model
         # user decides if inertia is computed automatically by pybullet or custom
@@ -186,6 +205,12 @@ class pyBulletRosWrapper(Node):
         self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0
         self.get_logger().info('loading urdf model: ' + urdf_path)
         # NOTE: self collision enabled by default
+        # load obstacle
+        self.get_logger().info(obstacle_path)
+        self.pb.loadURDF(obstacle_path, basePosition=[obstacle_pose_x, obstacle_pose_y, obstacle_pose_z],
+                                        baseOrientation=obstacle_spawn_orientation,
+                                        useFixedBase=fixed_base, flags=urdf_flags)
+
         return self.pb.loadURDF(urdf_path, basePosition=[robot_pose_x, robot_pose_y, robot_pose_z],
                                            baseOrientation=robot_spawn_orientation,
                                            useFixedBase=fixed_base, flags=urdf_flags)
