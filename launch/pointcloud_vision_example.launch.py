@@ -53,6 +53,13 @@ def generate_launch_description():
             text="True"
         )
     )
+    num_urdf_models_arg = DeclareLaunchArgument(
+        name='num_urdf_models',
+        default_value=TextSubstitution(
+            text="2"
+        ),
+        description='Number of models to load into PyBullet simulation'
+    )
     model_arg = DeclareLaunchArgument(
         name='model', 
         default_value=str(default_model_path),
@@ -149,6 +156,7 @@ def generate_launch_description():
     robot_xacro_path = LaunchConfiguration('model')
     obstacle_xacro_path = LaunchConfiguration('obstacle')
     pause_simulation = LaunchConfiguration('pause_simulation')
+    num_urdf_models = LaunchConfiguration('num_urdf_models')
     robot_pose_x = LaunchConfiguration('robot_pose_x')
     robot_pose_y = LaunchConfiguration('robot_pose_y')
     robot_pose_z = LaunchConfiguration('robot_pose_z')
@@ -170,16 +178,17 @@ def generate_launch_description():
             "plugin_import_prefix": plugin_import_prefix,
             "environment": environment,
             "pybullet_gui": pybullet_gui,
-            "robot_urdf_path": robot_xacro_path,
-            "obstacle_urdf_path": obstacle_xacro_path,
+            "urdf_model_path_0": robot_xacro_path,
+            "urdf_model_path_1": obstacle_xacro_path,
             "pause_simulation": pause_simulation,
-            "robot_pose_x": robot_pose_x,
-            "robot_pose_y": robot_pose_y,
-            "robot_pose_z": robot_pose_z, 
-            "robot_pose_yaw": robot_pose_yaw,
-            "obstacle_pose_x": obstacle_pose_x,
-            "obstacle_pose_y": obstacle_pose_y,
-            "obstacle_pose_z": obstacle_pose_z, 
+            "num_urdf_models": num_urdf_models,
+            "model_pose_x_0": robot_pose_x,
+            "model_pose_y_0": robot_pose_y,
+            "model_pose_z_0": robot_pose_z, 
+            "model_pose_yaw_0": robot_pose_yaw,
+            "model_pose_x_1": obstacle_pose_x,
+            "model_pose_y_1": obstacle_pose_y,
+            "model_pose_z_1": obstacle_pose_z, 
             "obstacle_pose_yaw": obstacle_pose_yaw,
             "fixed_base": fixed_base,
             "use_deformable_world": use_deformable_world,
@@ -193,6 +202,7 @@ def generate_launch_description():
         plugin_import_prefix_arg,
         environment_arg,
         pybullet_gui_arg,
+        num_urdf_models_arg,
         model_arg,
         obstacle_arg,
         pause_simulation_arg, 

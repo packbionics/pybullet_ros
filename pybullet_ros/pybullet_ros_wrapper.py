@@ -49,7 +49,7 @@ class pyBulletRosWrapper(Node):
         plugin_import_prefix = self.declare_parameter('plugin_import_prefix', 'pybullet_ros.plugins').value
         self.environment = getattr(importlib.import_module(f'{plugin_import_prefix}.{env_plugin}'), 'Environment')(self)
         # load robot URDF model, set gravity, and ground plane
-        self.robot = self.init_pybullet_robot()
+        self.robot = self.init_pybullet_models()
         self.connected_to_physics_server = None
         if not self.robot:
             self.connected_to_physics_server = False
@@ -147,13 +147,10 @@ class pyBulletRosWrapper(Node):
             self.get_logger().info('-------------------------')
             return self.pb.connect(self.pb.DIRECT)
 
-    def init_pybullet_robot(self):
-        """load robot URDF model, set gravity, ground plane and environment"""
-        # get from param server the path to the URDF robot model to load at startup
-        urdf_path = self.declare_parameter('robot_urdf_path', None).value
+    def load_urdf(self, i, urdf_path, urdf_flags, fixed_base=False):
         if urdf_path == None:
-            self.get_logger().warn('mandatory param robot_urdf_path not set, will exit now')
-            rclpy.shutdown()
+            self.get_logger().warn('param model_urdf_path_ ' + str(i) + ' not set, will skip now')
+            return None
         # test urdf file existance
         if not os.path.isfile(urdf_path):
             self.get_logger().error('param robot_urdf_path is set, but file does not exist : ' + urdf_path)
@@ -165,55 +162,45 @@ class pyBulletRosWrapper(Node):
             urdf_path_without_xacro = urdf_path[0:urdf_path.find('.xacro')]+urdf_path[urdf_path.find('.xacro')+len('.xacro'):]
             os.system(f'xacro {urdf_path} -o {urdf_path_without_xacro}')
             urdf_path = urdf_path_without_xacro
-        # get from param server the path to the URDF obstacle model
-        obstacle_path = self.declare_parameter('obstacle_urdf_path', None).value
-        if obstacle_path == None:
-            self.get_logger().info('optional param obstacle_urdf_path not set, will continue without obstacles')
-        # test obstacle urdf file existance
-        if obstacle_path != None and not os.path.isfile(urdf_path):
-            self.get_logger().error('param obstacle_urdf_path is set, but file does not exist : ' + obstacle_path)
-        # ensure urdf is not xacro, but if it is then make urdf file version out of it
-        if obstacle_path != None and 'xacro' in obstacle_path:
-            # remove xacro from name
-            obstacle_path_without_xacro = obstacle_path[0:obstacle_path.find('.xacro')]+obstacle_path[obstacle_path.find('.xacro')+len('.xacro'):] + '.urdf'
-            os.system(f'xacro {obstacle_path} -o {obstacle_path_without_xacro}')
-            obstacle_path = obstacle_path_without_xacro
-        # get robot spawn pose from parameter server
-        robot_pose_x = self.declare_parameter('robot_pose_x', 0.0).value
-        robot_pose_y = self.declare_parameter('robot_pose_y', 0.0).value
-        robot_pose_z = self.declare_parameter('robot_pose_z', 1.0).value
-        robot_pose_yaw = self.declare_parameter('robot_pose_yaw', 0.0).value        
-        robot_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, robot_pose_yaw])
-        # get obstacle spawn pose from parameter server
-        obstacle_pose_x = self.declare_parameter('obstacle_pose_x', 5.0).value
-        obstacle_pose_y = self.declare_parameter('obstacle_pose_y', 0.0).value
-        obstacle_pose_z = self.declare_parameter('obstacle_pose_z', 1.0).value
-        obstacle_pose_yaw = self.declare_parameter('obstacle_pose_yaw', 0.0).value
-        obstacle_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, obstacle_pose_yaw])
+        
+        model_pose_x = self.declare_parameter('model_pose_x_' + str(i), 0.0).value
+        model_pose_y = self.declare_parameter('model_pose_y_' + str(i), 0.0).value
+        model_pose_z = self.declare_parameter('model_pose_z_' + str(i), 1.0).value
+        model_pose_yaw = self.declare_parameter('model_pose_yaw_' + str(i), 0.0).value
+
+        model_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, model_pose_yaw])
+
+        return self.pb.loadURDF(urdf_path, basePosition=[model_pose_x, model_pose_y, model_pose_z],
+                                        baseOrientation=model_spawn_orientation,
+                                        useFixedBase=fixed_base, flags=urdf_flags)
+
+    def init_pybullet_models(self):
+        """load URDF models, set gravity, ground plane and environment"""
+        # load environment
+        self.get_logger().info('loading environment')
+        self.environment.load_environment()
+        # set no realtime simulation, NOTE: no need to stepSimulation if setRealTimeSimulation is set to 1
+        self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0        
+        # get from param server the number of URDF models to load
+        num_models = self.declare_parameter('num_urdf_models', 1).value
         fixed_base = self.declare_parameter('fixed_base', False).value
-        # load robot from URDF model
         # user decides if inertia is computed automatically by pybullet or custom
         if self.declare_parameter('use_inertia_from_file', False).value:
             # combining several boolean flags using "or" according to pybullet documentation
             urdf_flags = self.pb.URDF_USE_INERTIA_FROM_FILE | self.pb.URDF_USE_SELF_COLLISION
         else:
             urdf_flags = self.pb.URDF_USE_SELF_COLLISION
-        # load environment
-        self.get_logger().info('loading environment')
-        self.environment.load_environment()
-        # set no realtime simulation, NOTE: no need to stepSimulation if setRealTimeSimulation is set to 1
-        self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0
-        self.get_logger().info('loading urdf model: ' + urdf_path)
-        # NOTE: self collision enabled by default
-        # load obstacle
-        self.get_logger().info(obstacle_path)
-        self.pb.loadURDF(obstacle_path, basePosition=[obstacle_pose_x, obstacle_pose_y, obstacle_pose_z],
-                                        baseOrientation=obstacle_spawn_orientation,
-                                        useFixedBase=fixed_base, flags=urdf_flags)
-
-        return self.pb.loadURDF(urdf_path, basePosition=[robot_pose_x, robot_pose_y, robot_pose_z],
-                                           baseOrientation=robot_spawn_orientation,
-                                           useFixedBase=fixed_base, flags=urdf_flags)
+        self.get_logger().info('attempting to load urdf models...')
+        self.get_logger().info('total count: ' + str(num_models))
+        models = []
+        for i in range(num_models):
+            # get from param server the i-th URDF model
+            urdf_path = self.declare_parameter('urdf_model_path_' + str(i), None).value
+            # load robot from URDF model
+            # NOTE: self collision enabled by default
+            self.get_logger().info('loading urdf model: ' + str(urdf_path))
+            models.append(self.load_urdf(i, urdf_path, urdf_flags, fixed_base))
+        return models[0]
 
     def handle_reset_simulation(self, req):
         """Callback to handle the service offered by this node to reset the simulation"""
@@ -223,7 +210,7 @@ class pyBulletRosWrapper(Node):
         # remove all objects from the world and reset the world to initial conditions
         self.pb.resetSimulation()
         # load URDF model again, set gravity and floor
-        self.init_pybullet_robot()
+        self.init_pybullet_models()
         # resume simulation control cycle now that a new robot is in place
         self.pause_simulation = False
         return []
