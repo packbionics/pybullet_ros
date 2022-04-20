@@ -37,7 +37,7 @@ def read_csv(path):
 def gen_model_path_pose_args(rows, params_dict):
     arg_list = []
 
-    count = 1
+    count = 0
     for row in rows:
         curr_model_path = ''
         if row[0] == 'testrig':
@@ -115,18 +115,6 @@ def generate_launch_description():
             text="True"
         )
     )
-    num_urdf_models_arg = DeclareLaunchArgument(
-        name='num_urdf_models',
-        default_value=TextSubstitution(
-            text="3"
-        ),
-        description='Number of models to load into PyBullet simulation'
-    )
-    model_arg = DeclareLaunchArgument(
-        name='model', 
-        default_value=str(default_model_path),
-        description='Absolute path to robot xacro file'
-    )
     pause_simulation_arg = DeclareLaunchArgument(
         "pause_simulation", 
         default_value=TextSubstitution(
@@ -137,30 +125,6 @@ def generate_launch_description():
         "parallel_plugin_execution", 
         default_value=TextSubstitution(
             text="True"
-        )
-    )
-    robot_pose_x_arg = DeclareLaunchArgument(
-        "robot_pose_x", 
-        default_value=TextSubstitution(
-            text="0.0"
-        )
-    )
-    robot_pose_y_arg = DeclareLaunchArgument(
-        "robot_pose_y", 
-        default_value=TextSubstitution(
-            text="0.0"
-        )
-    )
-    robot_pose_z_arg = DeclareLaunchArgument(
-        "robot_pose_z", 
-        default_value=TextSubstitution(
-            text="0.1"
-        )
-    )
-    robot_pose_yaw_arg = DeclareLaunchArgument(
-        "robot_pose_yaw", 
-        default_value=TextSubstitution(
-            text="0.0"
         )
     )
     fixed_base_arg = DeclareLaunchArgument(
@@ -186,41 +150,41 @@ def generate_launch_description():
     plugin_import_prefix = LaunchConfiguration('plugin_import_prefix')
     environment = LaunchConfiguration('environment')
     pybullet_gui = LaunchConfiguration('pybullet_gui')
-    robot_xacro_path = LaunchConfiguration('model')
     pause_simulation = LaunchConfiguration('pause_simulation')
     num_urdf_models = LaunchConfiguration('num_urdf_models')
-    robot_pose_x = LaunchConfiguration('robot_pose_x')
-    robot_pose_y = LaunchConfiguration('robot_pose_y')
-    robot_pose_z = LaunchConfiguration('robot_pose_z')
-    robot_pose_yaw = LaunchConfiguration('robot_pose_yaw')
     fixed_base = LaunchConfiguration('fixed_base')
     use_deformable_world = LaunchConfiguration('use_deformable_world')
     gui_options = LaunchConfiguration('gui_options')
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
-    robot_urdf = Command(['xacro',' ',LaunchConfiguration('model')])
+    robot_urdf = Command(['xacro',' ',LaunchConfiguration('model_path_0')])
 
     required_pybullet_ros_params = {
             "plugin_import_prefix": plugin_import_prefix,
             "environment": environment,
             "pybullet_gui": pybullet_gui,
-            "urdf_model_path_0": robot_xacro_path,
             "pause_simulation": pause_simulation,
             "num_urdf_models": num_urdf_models,
-            "model_pose_x_0": robot_pose_x,
-            "model_pose_y_0": robot_pose_y,
-            "model_pose_z_0": robot_pose_z, 
-            "model_pose_yaw_0": robot_pose_yaw,
             "fixed_base": fixed_base,
             "use_deformable_world": use_deformable_world,
             #"gui_options": gui_options, FIXME: CAUSES ERROR WHEN WHEN RUNNING LAUNCH FILE
             "use_sim_time": use_sim_time
     }
-    arg_list, required_pybullet_ros_params = gen_model_path_pose_args(read_csv(os.path.join(pybullet_ros_dir, 'config/model_spawn.csv')), required_pybullet_ros_params)
+
+    rows = read_csv(os.path.join(pybullet_ros_dir, 'config/model_spawn.csv'))
+    arg_list, required_pybullet_ros_params = gen_model_path_pose_args(rows, required_pybullet_ros_params)
     pybullet_ros_parameters=[
         config_file, 
         required_pybullet_ros_params
     ]
+
+    num_urdf_models_arg = DeclareLaunchArgument(
+        name='num_urdf_models',
+        default_value=TextSubstitution(
+            text=str(len(rows))
+        ),
+        description='Number of models to load into PyBullet simulation'
+    )
 
     return LaunchDescription(arg_list + [
         config_file_arg,
@@ -228,13 +192,8 @@ def generate_launch_description():
         environment_arg,
         pybullet_gui_arg,
         num_urdf_models_arg,
-        model_arg,
         pause_simulation_arg, 
         parallel_plugin_execution_arg,
-        robot_pose_x_arg,
-        robot_pose_y_arg,
-        robot_pose_z_arg,
-        robot_pose_yaw_arg,
         fixed_base_arg,
         use_deformable_world_arg,
         gui_options_arg,
