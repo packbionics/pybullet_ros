@@ -29,6 +29,7 @@ def read_csv(path):
     # Skip header
     next(csv_reader)
 
+    # Read model name and pose: x y z
     rows = []
     for row in csv_reader:
         rows.append(row)
@@ -39,30 +40,36 @@ def gen_model_path_pose_args(rows, params_dict):
 
     count = 0
     for row in rows:
+        
+        # Identify which urdf to load
         curr_model_path = ''
         if row[0] == 'testrig':
             curr_model_path = str(default_model_path)
         if row[0] == 'stairs':
             curr_model_path = str(default_obstacle_path)
 
+        # set model path
         curr_model_path_arg = DeclareLaunchArgument(
             name="model_path_" + str(count),
             default_value=TextSubstitution(
                 text=curr_model_path
             ) 
         )
+        # set x pose
         curr_model_pose_x_arg = DeclareLaunchArgument(
             name="model_pose_x_" + str(count),
             default_value=TextSubstitution(
                 text=row[1]
             ) 
         )
+        # set y pose
         curr_model_pose_y_arg = DeclareLaunchArgument(
             name="model_pose_y_" + str(count),
             default_value=TextSubstitution(
                 text=row[2]
             ) 
         )
+        # set z pose
         curr_model_pose_z_arg = DeclareLaunchArgument(
             name="model_pose_z_" + str(count),
             default_value=TextSubstitution(
@@ -70,6 +77,7 @@ def gen_model_path_pose_args(rows, params_dict):
             ) 
         )
 
+        # set params
         params_dict["urdf_model_path_" + str(count)] = LaunchConfiguration('model_path_' + str(count))
         params_dict["model_pose_x_" + str(count)] = LaunchConfiguration('model_pose_x_' + str(count))
         params_dict["model_pose_y_" + str(count)] = LaunchConfiguration('model_pose_y_' + str(count))
@@ -171,8 +179,11 @@ def generate_launch_description():
             "use_sim_time": use_sim_time
     }
 
+    # read csv
     rows = read_csv(os.path.join(pybullet_ros_dir, 'config/model_spawn.csv'))
+    # append additional arguments and params for loading models
     arg_list, required_pybullet_ros_params = gen_model_path_pose_args(rows, required_pybullet_ros_params)
+    
     pybullet_ros_parameters=[
         config_file, 
         required_pybullet_ros_params
