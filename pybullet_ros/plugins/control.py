@@ -75,9 +75,9 @@ class Control(Node):
         if self.has_parameter('max_effort_vel_mode'):
             self.get_logger().warn('max_effort_vel_mode parameter is deprecated, please use max_effort instead')
             # kept for backwards compatibility, delete after some time
-            max_effort = self.declare_parameter('max_effort_vel_mode', 100.0).value
+            max_effort = self.declare_parameter('max_effort_vel_mode', 1000.0).value
         else:
-            max_effort = self.declare_parameter('max_effort', 100.0).value
+            max_effort = self.declare_parameter('max_effort', 1000.0).value
             self.get_logger().info("Control: Max effort={}".format(max_effort))
         # the max force to apply to the joint, used in velocity control
         self.force_commands = []
