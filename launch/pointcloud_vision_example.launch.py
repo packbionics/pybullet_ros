@@ -76,13 +76,21 @@ def gen_model_path_pose_args(rows, params_dict):
                 text=row[3]
             ) 
         )
+        # set yaw pose
+        curr_model_pose_yaw_arg = DeclareLaunchArgument(
+            name="model_pose_yaw_" + str(count),
+            default_value=TextSubstitution(
+                text=row[4]
+            ) 
+        )
 
         # set params
         params_dict["urdf_model_path_" + str(count)] = LaunchConfiguration('model_path_' + str(count))
         params_dict["model_pose_x_" + str(count)] = LaunchConfiguration('model_pose_x_' + str(count))
         params_dict["model_pose_y_" + str(count)] = LaunchConfiguration('model_pose_y_' + str(count))
         params_dict["model_pose_z_" + str(count)] = LaunchConfiguration('model_pose_z_' + str(count))
-        arg_list += [curr_model_path_arg, curr_model_pose_x_arg, curr_model_pose_y_arg, curr_model_pose_z_arg]
+        params_dict["model_pose_yaw_" + str(count)] = LaunchConfiguration('model_pose_yaw_' + str(count))
+        arg_list += [curr_model_path_arg, curr_model_pose_x_arg, curr_model_pose_y_arg, curr_model_pose_z_arg, curr_model_pose_yaw_arg]
 
         count += 1 
     
