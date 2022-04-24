@@ -1,105 +1,20 @@
 from email.policy import default
 import os
-import csv
-
-from matplotlib.pyplot import text
 
 from ament_index_python import get_package_share_directory
 from ament_index_python import get_package_share_path
 from launch_ros.actions import Node
-from launch_ros.actions import ComposableNodeContainer
-
-from launch_ros.descriptions import ComposableNode
 
 from launch import LaunchDescription
 from launch.actions.declare_launch_argument import DeclareLaunchArgument
 from launch.substitutions import Command, TextSubstitution
 from launch.substitutions.launch_configuration import LaunchConfiguration
 
-obstacle_dir = get_package_share_path('obstacles')
-default_obstacle_path = obstacle_dir / 'urdf/prebuilts/staircase_standalone.xacro'
-
-description_dir = get_package_share_path('jetleg_description')
-default_model_path = description_dir / 'urdf/testrig_vision.xacro'
-
-def read_csv(path):
-    file = open(path)
-    csv_reader = csv.reader(file)
-
-    # Skip header
-    next(csv_reader)
-
-    # Read model name and pose: x y z
-    rows = []
-    for row in csv_reader:
-        rows.append(row)
-    return rows
-
-def gen_model_path_pose_args(rows, params_dict):
-    arg_list = []
-
-    count = 0
-    for row in rows:
-        
-        # Identify which urdf to load
-        curr_model_path = ''
-        if row[0] == 'testrig':
-            curr_model_path = str(default_model_path)
-        if row[0] == 'stairs':
-            curr_model_path = str(default_obstacle_path)
-
-        # set model path
-        curr_model_path_arg = DeclareLaunchArgument(
-            name="model_path_" + str(count),
-            default_value=TextSubstitution(
-                text=curr_model_path
-            ) 
-        )
-        # set x pose
-        curr_model_pose_x_arg = DeclareLaunchArgument(
-            name="model_pose_x_" + str(count),
-            default_value=TextSubstitution(
-                text=row[1]
-            ) 
-        )
-        # set y pose
-        curr_model_pose_y_arg = DeclareLaunchArgument(
-            name="model_pose_y_" + str(count),
-            default_value=TextSubstitution(
-                text=row[2]
-            ) 
-        )
-        # set z pose
-        curr_model_pose_z_arg = DeclareLaunchArgument(
-            name="model_pose_z_" + str(count),
-            default_value=TextSubstitution(
-                text=row[3]
-            ) 
-        )
-        # set yaw pose
-        curr_model_pose_yaw_arg = DeclareLaunchArgument(
-            name="model_pose_yaw_" + str(count),
-            default_value=TextSubstitution(
-                text=row[4]
-            ) 
-        )
-
-        # set params
-        params_dict["urdf_model_path_" + str(count)] = LaunchConfiguration('model_path_' + str(count))
-        params_dict["model_pose_x_" + str(count)] = LaunchConfiguration('model_pose_x_' + str(count))
-        params_dict["model_pose_y_" + str(count)] = LaunchConfiguration('model_pose_y_' + str(count))
-        params_dict["model_pose_z_" + str(count)] = LaunchConfiguration('model_pose_z_' + str(count))
-        params_dict["model_pose_yaw_" + str(count)] = LaunchConfiguration('model_pose_yaw_' + str(count))
-        arg_list += [curr_model_path_arg, curr_model_pose_x_arg, curr_model_pose_y_arg, curr_model_pose_z_arg, curr_model_pose_yaw_arg]
-
-        count += 1 
-    
-    return arg_list, params_dict
-
 def generate_launch_description():
+    description_dir = get_package_share_path('jetleg_description')
+    default_model_path = description_dir / 'urdf/testrig_vision.xacro'
 
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
-
     rviz_config_file = os.path.join(pybullet_ros_dir, 'config/pybullet_pointcloud_vision_config.rviz')
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
@@ -167,50 +82,34 @@ def generate_launch_description():
     environment = LaunchConfiguration('environment')
     pybullet_gui = LaunchConfiguration('pybullet_gui')
     pause_simulation = LaunchConfiguration('pause_simulation')
-    num_urdf_models = LaunchConfiguration('num_urdf_models')
     fixed_base = LaunchConfiguration('fixed_base')
     use_deformable_world = LaunchConfiguration('use_deformable_world')
     gui_options = LaunchConfiguration('gui_options')
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
-    robot_urdf = Command(['xacro',' ',LaunchConfiguration('model_path_0')])
+    robot_urdf = Command(['xacro',' ', str(default_model_path)])
 
-    required_pybullet_ros_params = {
+    default_pybullet_ros_params = {
             "plugin_import_prefix": plugin_import_prefix,
             "environment": environment,
             "pybullet_gui": pybullet_gui,
             "pause_simulation": pause_simulation,
-            "num_urdf_models": num_urdf_models,
             "fixed_base": fixed_base,
             "use_deformable_world": use_deformable_world,
             #"gui_options": gui_options, FIXME: CAUSES ERROR WHEN WHEN RUNNING LAUNCH FILE
             "use_sim_time": use_sim_time
     }
-
-    # read csv
-    rows = read_csv(os.path.join(pybullet_ros_dir, 'config/model_spawn.csv'))
-    # append additional arguments and params for loading models
-    arg_list, required_pybullet_ros_params = gen_model_path_pose_args(rows, required_pybullet_ros_params)
     
     pybullet_ros_parameters=[
         config_file, 
-        required_pybullet_ros_params
+        default_pybullet_ros_params
     ]
 
-    num_urdf_models_arg = DeclareLaunchArgument(
-        name='num_urdf_models',
-        default_value=TextSubstitution(
-            text=str(len(rows))
-        ),
-        description='Number of models to load into PyBullet simulation'
-    )
-
-    return LaunchDescription(arg_list + [
+    return LaunchDescription([
         config_file_arg,
         plugin_import_prefix_arg,
         environment_arg,
         pybullet_gui_arg,
-        num_urdf_models_arg,
         pause_simulation_arg, 
         parallel_plugin_execution_arg,
         fixed_base_arg,

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 import importlib
-import logging
 import os
-import traceback
+import csv
 
 import pybullet_data
 import rclpy
-from rclpy import executors
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_srvs.srv import Empty
+from ament_index_python import get_package_share_path
+from ament_index_python import get_package_share_directory
 
 from pybullet_ros.function_exec_manager import FuncExecManager
 
@@ -147,30 +147,68 @@ class pyBulletRosWrapper(Node):
             self.get_logger().info('-------------------------')
             return self.pb.connect(self.pb.DIRECT)
 
-    def load_urdf(self, i, urdf_path, urdf_flags, fixed_base=False):
-        if urdf_path == None:
-            self.get_logger().warn('param model_urdf_path_ ' + str(i) + ' not set, will skip now')
-            return None
+    def load_model_path_pose(self, path):
+        file = open(path)
+        csv_reader = csv.reader(file)
+        # Skip header
+        next(csv_reader)
+        # Read model name and pose: x y z
+        rows = []
+        for row in csv_reader:
+            rows.append(row)
+        return rows
+    
+    def gen_model_path_pose(self, rows):
+        obstacle_dir = get_package_share_path('obstacles')
+        default_obstacle_path = obstacle_dir / 'urdf/prebuilts/staircase_standalone.xacro'
+
+        description_dir = get_package_share_path('jetleg_description')
+        default_model_path = description_dir / 'urdf/testrig_vision.xacro'
+
+        count = 0
+        model_path_pose = []
+        for row in rows:
+            # # set model path
+            model_path = ''
+            if row[0] == 'testrig':
+                model_path = str(default_model_path)
+            if row[0] == 'stairs':
+                model_path = str(default_obstacle_path)
+            # set x pose
+            pose_x = float(row[1])
+            # set y pose
+            pose_y = float(row[2])
+            # set z pose
+            pose_z = float(row[3])
+            # set yaw pose
+            pose_yaw = float(row[4])
+
+            model_path_pose.append([model_path, pose_x, pose_y, pose_z, pose_yaw])
+            count += 1 
+        
+        return model_path_pose
+
+    def load_urdf(self, i, row, urdf_flags, fixed_base=False):
         # test urdf file existance
-        if not os.path.isfile(urdf_path):
-            self.get_logger().error('param robot_urdf_path is set, but file does not exist : ' + urdf_path)
+        if not os.path.isfile(row[0]):
+            self.get_logger().error('file does not exist : ' + row[0])
             rclpy.shutdown()
             return None
         # ensure urdf is not xacro, but if it is then make urdf file version out of it
-        if 'xacro' in urdf_path:
+        if 'xacro' in row[0]:
             # remove xacro from name
-            urdf_path_without_xacro = urdf_path[0:urdf_path.find('.xacro')]+urdf_path[urdf_path.find('.xacro')+len('.xacro'):]
-            os.system(f'xacro {urdf_path} -o {urdf_path_without_xacro}')
-            urdf_path = urdf_path_without_xacro
+            urdf_path_without_xacro = row[0][0:row[0].find('.xacro')]+row[0][row[0].find('.xacro')+len('.xacro'):]
+            os.system(f'xacro {row[0]} -o {urdf_path_without_xacro}')
+            row[0] = urdf_path_without_xacro
         
-        model_pose_x = self.declare_parameter('model_pose_x_' + str(i), 0.0).value
-        model_pose_y = self.declare_parameter('model_pose_y_' + str(i), 0.0).value
-        model_pose_z = self.declare_parameter('model_pose_z_' + str(i), 1.0).value
-        model_pose_yaw = self.declare_parameter('model_pose_yaw_' + str(i), 0.0).value
+        model_pose_x = row[1]
+        model_pose_y = row[2]
+        model_pose_z = row[3]
+        model_pose_yaw = row[4]
 
         model_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, model_pose_yaw])
 
-        return self.pb.loadURDF(urdf_path, basePosition=[model_pose_x, model_pose_y, model_pose_z],
+        return self.pb.loadURDF(row[0], basePosition=[model_pose_x, model_pose_y, model_pose_z],
                                         baseOrientation=model_spawn_orientation,
                                         useFixedBase=fixed_base, flags=urdf_flags)
 
@@ -181,8 +219,6 @@ class pyBulletRosWrapper(Node):
         self.environment.load_environment()
         # set no realtime simulation, NOTE: no need to stepSimulation if setRealTimeSimulation is set to 1
         self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0        
-        # get from param server the number of URDF models to load
-        num_models = self.declare_parameter('num_urdf_models', 1).value
         fixed_base = self.declare_parameter('fixed_base', False).value
         # user decides if inertia is computed automatically by pybullet or custom
         if self.declare_parameter('use_inertia_from_file', False).value:
@@ -190,16 +226,17 @@ class pyBulletRosWrapper(Node):
             urdf_flags = self.pb.URDF_USE_INERTIA_FROM_FILE | self.pb.URDF_USE_SELF_COLLISION
         else:
             urdf_flags = self.pb.URDF_USE_SELF_COLLISION
+        pybullet_ros_dir = get_package_share_directory('pybullet_ros')
+        rows = self.load_model_path_pose(os.path.join(pybullet_ros_dir, 'config/model_spawn.csv'))
+        rows = self.gen_model_path_pose(rows)
         self.get_logger().info('attempting to load urdf models...')
-        self.get_logger().info('total count: ' + str(num_models))
+        self.get_logger().info('total count: ' + str(len(rows)))
         models = []
-        for i in range(num_models):
-            # get from param server the i-th URDF model
-            urdf_path = self.declare_parameter('urdf_model_path_' + str(i), None).value
+        for i in range(len(rows)):
             # load robot from URDF model
             # NOTE: self collision enabled by default
-            self.get_logger().info('loading urdf model: ' + str(urdf_path))
-            models.append(self.load_urdf(i, urdf_path, urdf_flags, fixed_base))
+            self.get_logger().info('loading urdf model: ' + str(rows[i][0]))
+            models.append(self.load_urdf(i, rows[i], urdf_flags, fixed_base))
         return models[0]
 
     def handle_reset_simulation(self, req):

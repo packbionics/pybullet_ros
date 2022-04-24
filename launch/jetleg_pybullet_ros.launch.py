@@ -137,7 +137,7 @@ def generate_launch_description():
             "robot_pose_yaw": robot_pose_yaw,
             "fixed_base": fixed_base,
             "use_deformable_world": use_deformable_world,
-            "gui_options": gui_options,
+            #"gui_options": gui_options,
             "use_sim_time": use_sim_time
         }
     ]
