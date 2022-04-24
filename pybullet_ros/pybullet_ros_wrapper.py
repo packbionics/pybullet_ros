@@ -159,33 +159,20 @@ class pyBulletRosWrapper(Node):
         return rows
     
     def gen_model_path_pose(self, rows):
-        obstacle_dir = get_package_share_path('obstacles')
-        default_obstacle_path = obstacle_dir / 'urdf/prebuilts/staircase_standalone.xacro'
-
-        description_dir = get_package_share_path('jetleg_description')
-        default_model_path = description_dir / 'urdf/testrig_vision.xacro'
-
-        count = 0
         model_path_pose = []
         for row in rows:
             # # set model path
-            model_path = ''
-            if row[0] == 'testrig':
-                model_path = str(default_model_path)
-            if row[0] == 'stairs':
-                model_path = str(default_obstacle_path)
+            model_path = str(get_package_share_path(row[0]) / row[1])
             # set x pose
-            pose_x = float(row[1])
+            pose_x = float(row[2])
             # set y pose
-            pose_y = float(row[2])
+            pose_y = float(row[3])
             # set z pose
-            pose_z = float(row[3])
+            pose_z = float(row[4])
             # set yaw pose
-            pose_yaw = float(row[4])
+            pose_yaw = float(row[5])
 
-            model_path_pose.append([model_path, pose_x, pose_y, pose_z, pose_yaw])
-            count += 1 
-        
+            model_path_pose.append([model_path, pose_x, pose_y, pose_z, pose_yaw])        
         return model_path_pose
 
     def load_urdf(self, i, row, urdf_flags, fixed_base=False):

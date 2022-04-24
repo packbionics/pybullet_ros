@@ -1,4 +1,4 @@
-Model,X,Y,Z,yaw
-testrig,0.0,0.0,0.1,0.0
-stairs,0.5,0.0,0.1,0.0
-stairs,5.0,0.0,0.1,0.0
+Package,Model,X,Y,Z,Yaw
+jetleg_description,urdf/testrig_vision.xacro,0.0,0.0,0.1,0.0
+obstacles,urdf/prebuilts/staircase_standalone.xacro,0.5,0.0,0.1,0.0
+obstacles,urdf/prebuilts/staircase_standalone.xacro,5.0,0.0,0.1,0.0
