@@ -195,6 +195,7 @@ class pyBulletRosWrapper(Node):
 
         model_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, model_pose_yaw])
 
+        self.get_logger().info('loading urdf from file: ' + str(row[0]))
         return self.pb.loadURDF(row[0], basePosition=[model_pose_x, model_pose_y, model_pose_z],
                                         baseOrientation=model_spawn_orientation,
                                         useFixedBase=fixed_base, flags=urdf_flags)

@@ -10,6 +10,7 @@ from re import S
 
 import numpy as np
 import rclpy
+import cv2
 from cv_bridge import CvBridge
 from rclpy.node import Node
 
