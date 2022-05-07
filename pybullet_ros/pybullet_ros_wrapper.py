@@ -19,7 +19,8 @@ class pyBulletRosWrapper(Node):
     """ROS wrapper class for pybullet simulator"""
     def __init__(self):
 
-        super().__init__('pybullet_ros')
+        super().__init__('pybullet_ros', 
+            automatically_declare_parameters_from_overrides=True)
 
         ex = MultiThreadedExecutor()
         self.executor = ex
@@ -28,12 +29,12 @@ class pyBulletRosWrapper(Node):
         self.pb = importlib.import_module('pybullet')
 
         # get from param server the frequency at which to run the simulation
-        self.loop_rate = self.declare_parameter('loop_rate', 80.0).value
+        self.loop_rate = self.get_parameter('loop_rate').value  
         self.get_logger().info('Loop rate: {}'.format(self.loop_rate))
         # query from param server if gui is needed
-        is_gui_needed = self.declare_parameter('pybullet_gui', True).value
+        is_gui_needed = self.get_parameter('pybullet_gui').value
         # get from param server if user wants to pause simulation at startup
-        self.pause_simulation = self.declare_parameter('pause_simulation', False).value
+        self.pause_simulation = self.get_parameter('pause_simulation').value  
         print('\033[34m')
         # print pybullet stuff in blue
         physicsClient = self.start_gui(gui=is_gui_needed) # we dont need to store the physics client for now...
@@ -45,8 +46,8 @@ class pyBulletRosWrapper(Node):
         # get pybullet path in your system and store it internally for future use, e.g. to set floor
         self.pb.setAdditionalSearchPath(pybullet_data.getDataPath())
         # create object of environment class for later use
-        env_plugin = self.declare_parameter('environment', 'environment').value # default : plugins/environment.py
-        plugin_import_prefix = self.declare_parameter('plugin_import_prefix', 'pybullet_ros.plugins').value
+        env_plugin = self.get_parameter('environment').value # default : plugins/environment.py
+        plugin_import_prefix = self.get_parameter('plugin_import_prefix').value
         self.environment = getattr(importlib.import_module(f'{plugin_import_prefix}.{env_plugin}'), 'Environment')(self)
         # load robot URDF model, set gravity, and ground plane
         self.robot = self.init_pybullet_models()
@@ -60,7 +61,7 @@ class pyBulletRosWrapper(Node):
         rev_joint_index_name_dic, prismatic_joint_index_name_dic, fixed_joint_index_name_dic, link_names_to_ids_dic = self.get_properties()
         # import plugins dynamically
         self.plugins = []
-        plugins = self.declare_parameter('plugins', ['']).value
+        plugins = self.get_parameter('plugins').value
         if not plugins or plugins == ['']:
             self.get_logger().warn('No plugins found, forgot to set param plugins?')
         # return to normal shell color
@@ -138,7 +139,7 @@ class pyBulletRosWrapper(Node):
             # start simulation with gui
             self.get_logger().info('Running pybullet with gui')
             self.get_logger().info('-------------------------')
-            gui_options = self.declare_parameter('gui_options', '').value # e.g. to maximize screen: options="--width=2560 --height=1440"
+            gui_options = self.get_parameter('gui_options').value # e.g. to maximize screen: options="--width=2560 --height=1440"
             return self.pb.connect(self.pb.GUI, options=gui_options)
         else:
             # start simulation without gui (non-graphical version)
@@ -207,9 +208,9 @@ class pyBulletRosWrapper(Node):
         self.environment.load_environment()
         # set no realtime simulation, NOTE: no need to stepSimulation if setRealTimeSimulation is set to 1
         self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0        
-        fixed_base = self.declare_parameter('fixed_base', False).value
+        fixed_base = self.get_parameter('fixed_base').value
         # user decides if inertia is computed automatically by pybullet or custom
-        if self.declare_parameter('use_inertia_from_file', False).value:
+        if self.get_parameter('use_inertia_from_file').value:
             # combining several boolean flags using "or" according to pybullet documentation
             urdf_flags = self.pb.URDF_USE_INERTIA_FROM_FILE | self.pb.URDF_USE_SELF_COLLISION
         else:

@@ -24,8 +24,8 @@
 
 /pybullet_ros_control:
   ros__parameters:
-    loop_rate:              40.0
-    max_effort:             100.0
+    loop_rate:              100.0
+    max_effort:             10000.0
 
 /pybullet_ros_joint_state_pub:
   ros__parameters:

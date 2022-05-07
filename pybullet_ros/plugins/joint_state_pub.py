@@ -9,8 +9,9 @@ from sensor_msgs.msg import JointState
 
 class JointStatePub(Node):
     def __init__(self, pybullet, robot, **kargs):
-        super().__init__('pybullet_ros_joint_state_pub')
-        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        super().__init__('pybullet_ros_joint_state_pub', 
+            automatically_declare_parameters_from_overrides=True)
+        self.rate = self.get_parameter('loop_rate').value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
