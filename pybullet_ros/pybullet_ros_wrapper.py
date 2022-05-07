@@ -60,8 +60,8 @@ class pyBulletRosWrapper(Node):
         rev_joint_index_name_dic, prismatic_joint_index_name_dic, fixed_joint_index_name_dic, link_names_to_ids_dic = self.get_properties()
         # import plugins dynamically
         self.plugins = []
-        plugins = self.declare_parameter('plugins', []).value
-        if not plugins:
+        plugins = self.declare_parameter('plugins', ['']).value
+        if not plugins or plugins == ['']:
             self.get_logger().warn('No plugins found, forgot to set param plugins?')
         # return to normal shell color
         print('\033[0m')

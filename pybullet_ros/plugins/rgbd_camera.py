@@ -68,7 +68,7 @@ class RGBDCamera(Node):
         self.hfov = self.declare_parameter('rgbd_camera/hfov', 56.3).value
         self.vfov = self.declare_parameter('rgbd_camera/vfov', 43.7).value
         self.near_plane = self.declare_parameter('rgbd_camera/near_plane', 0.4).value
-        self.far_plane = self.declare_parameter('rgbd_camera/far_plane', 8).value
+        self.far_plane = self.declare_parameter('rgbd_camera/far_plane', 8.0).value
         self.projection_matrix = self.compute_projection_matrix()
         # create service
         self.camera_params_serv = self.create_service(CameraParams, 'camera/params', self.camera_params_callback)
