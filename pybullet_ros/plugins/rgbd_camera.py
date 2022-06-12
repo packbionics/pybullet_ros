@@ -178,4 +178,3 @@ class RGBDCamera(Node):
         # publish camera image to ROS network
         self.pub_camera_state.publish(self.camera_pose_msg)
         self.pub_image.publish(self.image_msg)
-        #self.get_logger().info('Published image')

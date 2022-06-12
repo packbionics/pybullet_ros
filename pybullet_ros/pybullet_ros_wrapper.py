@@ -12,15 +12,12 @@ from std_srvs.srv import Empty
 from ament_index_python import get_package_share_path
 from ament_index_python import get_package_share_directory
 
-from pybullet_ros.function_exec_manager import FuncExecManager
-
 
 class pyBulletRosWrapper(Node):
     """ROS wrapper class for pybullet simulator"""
     def __init__(self):
 
-        super().__init__('pybullet_ros', 
-            automatically_declare_parameters_from_overrides=True)
+        super().__init__('pybullet_ros', automatically_declare_parameters_from_overrides=True)
 
         ex = MultiThreadedExecutor()
         self.executor = ex
@@ -37,7 +34,7 @@ class pyBulletRosWrapper(Node):
         self.pause_simulation = self.get_parameter('pause_simulation').value  
         print('\033[34m')
         # print pybullet stuff in blue
-        physicsClient = self.start_gui(gui=is_gui_needed) # we dont need to store the physics client for now...
+        self.start_gui(gui=is_gui_needed) # we dont need to store the physics client for now...
         # setup service to restart simulation
         self.create_service(Empty, 'reset_simulation', self.handle_reset_simulation)
         # setup services for pausing/unpausing simulation
@@ -176,7 +173,7 @@ class pyBulletRosWrapper(Node):
             model_path_pose.append([model_path, pose_x, pose_y, pose_z, pose_yaw])        
         return model_path_pose
 
-    def load_urdf(self, i, row, urdf_flags, fixed_base=False):
+    def load_urdf(self, row, urdf_flags, fixed_base=False):
         # test urdf file existance
         if not os.path.isfile(row[0]):
             self.get_logger().error('file does not exist : ' + row[0])
@@ -225,7 +222,7 @@ class pyBulletRosWrapper(Node):
             # load robot from URDF model
             # NOTE: self collision enabled by default
             self.get_logger().info('loading urdf model: ' + str(rows[i][0]))
-            models.append(self.load_urdf(i, rows[i], urdf_flags, fixed_base))
+            models.append(self.load_urdf(rows[i], urdf_flags, fixed_base))
         return models[0]
 
     def handle_reset_simulation(self, req):

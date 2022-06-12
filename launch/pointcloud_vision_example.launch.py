@@ -1,8 +1,6 @@
-from email.policy import default
 import os
 
 from ament_index_python import get_package_share_directory
-from ament_index_python import get_package_share_path
 from launch_ros.actions import Node
 
 from launch import LaunchDescription
@@ -11,21 +9,19 @@ from launch.substitutions import Command, TextSubstitution
 from launch.substitutions.launch_configuration import LaunchConfiguration
 
 def generate_launch_description():
-    description_dir = get_package_share_path('jetleg_description')
-    default_model_path = description_dir / 'urdf/testrig_vision.xacro'
-
+    description_dir = get_package_share_directory('jetleg_description')
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
-    rviz_config_file = os.path.join(pybullet_ros_dir, 'config/pybullet_pointcloud_vision_config.rviz')
+
+    default_model_path = os.path.join(description_dir, 'urdf/testrig_vision.xacro')
+    config_file_path = os.path.join(pybullet_ros_dir, "config/jetleg_pybullet_vision_params.yaml")
+
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
     config_file_arg = DeclareLaunchArgument(
         "config_file", 
         default_value=TextSubstitution(
-            text=os.path.join(
-                pybullet_ros_dir, 
-                "config/jetleg_pybullet_vision_params.yaml"
-            )
+            text=config_file_path
         )
     )
     plugin_import_prefix_arg = DeclareLaunchArgument(
@@ -72,7 +68,7 @@ def generate_launch_description():
     )
     gui_options_arg = DeclareLaunchArgument(
         "gui_options", 
-        default_value=[]
+        default_value='""'
     )
 
     config_file = LaunchConfiguration('config_file')
@@ -128,19 +124,4 @@ def generate_launch_description():
                          'robot_description': robot_urdf}],
             arguments=[robot_urdf]
         ),
-        Node(
-            package='pointcloud_proc_cpp',
-            executable='gen_pointcloud',
-            output='screen',
-            remappings=[('image', 'camera/depth/image_raw'),
-                        ('pointcloud', '/zed2i/zed_node/point_cloud/cloud_registered'),
-                        ('camera_state', 'camera/state'),
-                        ('camera_params', 'camera/params')]
-        ),
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            output='screen',
-            arguments=['-d', rviz_config_file]
-        )
     ])
