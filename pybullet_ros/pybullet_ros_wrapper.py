@@ -145,7 +145,7 @@ class pyBulletRosWrapper(Node):
             self.get_logger().info('-------------------------')
             return self.pb.connect(self.pb.DIRECT)
 
-    def load_model_path_pose(self, path):
+    def model_info_from_file(self, path):
         file = open(path)
         csv_reader = csv.reader(file)
         # Skip header
@@ -156,55 +156,68 @@ class pyBulletRosWrapper(Node):
             rows.append(row)
         return rows
     
-    def gen_model_path_pose(self, rows):
+    def model_path_pose_from_file(self, path):
+        rows = self.model_info_from_file(path)
         model_path_pose = []
         for row in rows:
-            # # set model path
+            # set model path
             model_path = str(get_package_share_path(row[0]) / row[1])
-            # set x pose
-            pose_x = float(row[2])
-            # set y pose
-            pose_y = float(row[3])
-            # set z pose
-            pose_z = float(row[4])
+
+            # set x, y, and z positions
+            model_pose = row[2:5]
+            model_pose = list(map(float, model_pose))
+
             # set yaw pose
             pose_yaw = float(row[5])
 
-            model_path_pose.append([model_path, pose_x, pose_y, pose_z, pose_yaw])        
+            model_path_pose.append([model_path, model_pose, pose_yaw])        
         return model_path_pose
 
-    def load_urdf(self, row, urdf_flags, fixed_base=False):
+    def load_urdf(self, path, pose, yaw, urdf_flags, fixed_base=False):
+        orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, yaw])
+
         # test urdf file existance
-        if not os.path.isfile(row[0]):
-            self.get_logger().error('file does not exist : ' + row[0])
+        if not os.path.isfile(path):
+            self.get_logger().error('file does not exist : ' + path)
             rclpy.shutdown()
             return None
         # ensure urdf is not xacro, but if it is then make urdf file version out of it
-        if 'xacro' in row[0]:
+        if 'xacro' in path:
             # remove xacro from name
-            urdf_path_without_xacro = row[0][0:row[0].find('.xacro')]+row[0][row[0].find('.xacro')+len('.xacro'):]
-            os.system(f'xacro {row[0]} -o {urdf_path_without_xacro}')
-            row[0] = urdf_path_without_xacro
-        
-        model_pose_x = row[1]
-        model_pose_y = row[2]
-        model_pose_z = row[3]
-        model_pose_yaw = row[4]
+            path_end_without_xacro = path.find('.xacro')
+            path_without_xacro = path[0: path_end_without_xacro]
+            os.system(f'xacro {path} -o {path_without_xacro}')
+            path = path_without_xacro
 
-        model_spawn_orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, model_pose_yaw])
-
-        self.get_logger().info('loading urdf from file: ' + str(row[0]))
-        return self.pb.loadURDF(row[0], basePosition=[model_pose_x, model_pose_y, model_pose_z],
-                                        baseOrientation=model_spawn_orientation,
-                                        useFixedBase=fixed_base, flags=urdf_flags)
+        self.get_logger().info('loading urdf from file: ' + str(path))
+        return self.pb.loadURDF(path, basePosition=pose,
+                                        baseOrientation=orientation,
+                                        useFixedBase=fixed_base, flags=urdf_flags)  
 
     def init_pybullet_models(self):
         """load URDF models, set gravity, ground plane and environment"""
+        # load environment, set URDF flags
+        fixed_base, urdf_flags = self.init_environment()
+        pybullet_ros_dir = get_package_share_directory('pybullet_ros')
+        path_from_package = os.path.join('config', 'model_spawn.csv')
+        model_loader_path = os.path.join(pybullet_ros_dir, path_from_package)
+        rows = self.model_path_pose_from_file(model_loader_path)
+        self.get_logger().info('attempting to load urdf models...')
+        self.get_logger().info('total count: ' + str(len(rows)))
+        models = []
+        for row in rows:
+            # load robot from URDF model
+            # NOTE: self collision enabled by default
+            models.append(self.load_urdf(row[0], row[1], row[2], urdf_flags, fixed_base))
+        return models[0]
+
+    def init_environment(self):
+        """set gravity, ground plane and environment"""
         # load environment
         self.get_logger().info('loading environment')
         self.environment.load_environment()
         # set no realtime simulation, NOTE: no need to stepSimulation if setRealTimeSimulation is set to 1
-        self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0        
+        self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0
         fixed_base = self.get_parameter('fixed_base').value
         # user decides if inertia is computed automatically by pybullet or custom
         if self.get_parameter('use_inertia_from_file').value:
@@ -212,18 +225,8 @@ class pyBulletRosWrapper(Node):
             urdf_flags = self.pb.URDF_USE_INERTIA_FROM_FILE | self.pb.URDF_USE_SELF_COLLISION
         else:
             urdf_flags = self.pb.URDF_USE_SELF_COLLISION
-        pybullet_ros_dir = get_package_share_directory('pybullet_ros')
-        rows = self.load_model_path_pose(os.path.join(pybullet_ros_dir, 'config/model_spawn.csv'))
-        rows = self.gen_model_path_pose(rows)
-        self.get_logger().info('attempting to load urdf models...')
-        self.get_logger().info('total count: ' + str(len(rows)))
-        models = []
-        for i in range(len(rows)):
-            # load robot from URDF model
-            # NOTE: self collision enabled by default
-            self.get_logger().info('loading urdf model: ' + str(rows[i][0]))
-            models.append(self.load_urdf(rows[i], urdf_flags, fixed_base))
-        return models[0]
+
+        return fixed_base, urdf_flags
 
     def handle_reset_simulation(self, req):
         """Callback to handle the service offered by this node to reset the simulation"""
