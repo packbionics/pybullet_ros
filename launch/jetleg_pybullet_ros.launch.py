@@ -63,30 +63,6 @@ def generate_launch_description():
             text="True"
         )
     )
-    robot_pose_x_arg = DeclareLaunchArgument(
-        "robot_pose_x", 
-        default_value=TextSubstitution(
-            text="0.0"
-        )
-    )
-    robot_pose_y_arg = DeclareLaunchArgument(
-        "robot_pose_y", 
-        default_value=TextSubstitution(
-            text="0.0"
-        )
-    )
-    robot_pose_z_arg = DeclareLaunchArgument(
-        "robot_pose_z", 
-        default_value=TextSubstitution(
-            text="0.1"
-        )
-    )
-    robot_pose_yaw_arg = DeclareLaunchArgument(
-        "robot_pose_yaw", 
-        default_value=TextSubstitution(
-            text="0.0"
-        )
-    )
     fixed_base_arg = DeclareLaunchArgument(
         "fixed_base", 
         default_value=TextSubstitution(
@@ -112,10 +88,6 @@ def generate_launch_description():
     pybullet_gui = LaunchConfiguration('pybullet_gui')
     robot_xacro_path = LaunchConfiguration('model')
     pause_simulation = LaunchConfiguration('pause_simulation')
-    robot_pose_x = LaunchConfiguration('robot_pose_x')
-    robot_pose_y = LaunchConfiguration('robot_pose_y')
-    robot_pose_z = LaunchConfiguration('robot_pose_z')
-    robot_pose_yaw = LaunchConfiguration('robot_pose_yaw')
     fixed_base = LaunchConfiguration('fixed_base')
     use_deformable_world = LaunchConfiguration('use_deformable_world')
     gui_options = LaunchConfiguration('gui_options')
@@ -131,10 +103,6 @@ def generate_launch_description():
             "pybullet_gui": pybullet_gui,
             "robot_urdf_path": robot_xacro_path,
             "pause_simulation": pause_simulation,
-            "robot_pose_x": robot_pose_x,
-            "robot_pose_y": robot_pose_y,
-            "robot_pose_z": robot_pose_z, 
-            "robot_pose_yaw": robot_pose_yaw,
             "fixed_base": fixed_base,
             "use_deformable_world": use_deformable_world,
             "gui_options": gui_options,
@@ -150,10 +118,6 @@ def generate_launch_description():
         model_arg,
         pause_simulation_arg,
         parallel_plugin_execution_arg,
-        robot_pose_x_arg,
-        robot_pose_y_arg,
-        robot_pose_z_arg,
-        robot_pose_yaw_arg,
         fixed_base_arg,
         use_deformable_world_arg,
         gui_options_arg,

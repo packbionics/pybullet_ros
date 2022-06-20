@@ -2,16 +2,15 @@
 
 import importlib
 import os
-import csv
 
 import pybullet_data
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_srvs.srv import Empty
-from ament_index_python import get_package_share_path
-from ament_index_python import get_package_share_directory
 
+from utils import load_model_path_pose
+from utils import urdf_from_xacro
 
 class pyBulletRosWrapper(Node):
     """ROS wrapper class for pybullet simulator"""
@@ -19,34 +18,26 @@ class pyBulletRosWrapper(Node):
 
         super().__init__('pybullet_ros', automatically_declare_parameters_from_overrides=True)
 
+        # declare handler for multi-threaded processes
         ex = MultiThreadedExecutor()
         self.executor = ex
 
         # import pybullet
         self.pb = importlib.import_module('pybullet')
 
-        # get from param server the frequency at which to run the simulation
-        self.loop_rate = self.get_parameter('loop_rate').value  
-        self.get_logger().info('Loop rate: {}'.format(self.loop_rate))
-        # query from param server if gui is needed
-        is_gui_needed = self.get_parameter('pybullet_gui').value
-        # get from param server if user wants to pause simulation at startup
-        self.pause_simulation = self.get_parameter('pause_simulation').value  
+        # load parameters
+        self.init_parameters()
+        # print pybullet stuff in blue 
         print('\033[34m')
-        # print pybullet stuff in blue
-        self.start_gui(gui=is_gui_needed) # we dont need to store the physics client for now...
-        # setup service to restart simulation
-        self.create_service(Empty, 'reset_simulation', self.handle_reset_simulation)
-        # setup services for pausing/unpausing simulation
-        self.create_service(Empty, 'pause_physics', self.handle_pause_physics)
-        self.create_service(Empty, 'unpause_physics', self.handle_unpause_physics)
+        # start physics engine client
+        self.start_engine(gui=self.is_gui_needed) # we dont need to store the physics client for now...
         # get pybullet path in your system and store it internally for future use, e.g. to set floor
         self.pb.setAdditionalSearchPath(pybullet_data.getDataPath())
-        # create object of environment class for later use
-        env_plugin = self.get_parameter('environment').value # default : plugins/environment.py
-        plugin_import_prefix = self.get_parameter('plugin_import_prefix').value
-        self.environment = getattr(importlib.import_module(f'{plugin_import_prefix}.{env_plugin}'), 'Environment')(self)
+        self.environment = getattr(importlib.import_module(f'{self.plugin_import_prefix}.{self.env_plugin}'), 'Environment')(self)
+        # create ROS 2 services
+        self.init_services()
         # load robot URDF model, set gravity, and ground plane
+        self.urdf_flags = self.init_environment()
         self.robot = self.init_pybullet_models()
         self.connected_to_physics_server = None
         if not self.robot:
@@ -55,7 +46,7 @@ class pyBulletRosWrapper(Node):
         else:
             self.connected_to_physics_server = True
         # get all revolute joint names and pybullet index
-        rev_joint_index_name_dic, prismatic_joint_index_name_dic, fixed_joint_index_name_dic, link_names_to_ids_dic = self.get_properties()
+        self.rev_joint_index_name_dic, self.prismatic_joint_index_name_dic, self.fixed_joint_index_name_dic, self.link_names_to_ids_dic = self.get_properties()
         # import plugins dynamically
         self.plugins = []
         plugins = self.get_parameter('plugins').value
@@ -64,20 +55,7 @@ class pyBulletRosWrapper(Node):
         # return to normal shell color
         print('\033[0m')
         # load plugins
-        for plugin in plugins:
-            module_, class_ = plugin.split(':')
-            params_ = {'module': module_, 'class': class_}
-            self.get_logger().info('loading plugin: {} class from {}'.format(class_, module_))
-            # create object of the imported file class
-            obj = getattr(importlib.import_module(module_), class_)(self.pb, self.robot,
-                          rev_joints=rev_joint_index_name_dic,
-                          prism_joints=prismatic_joint_index_name_dic,
-                          fixed_joints=fixed_joint_index_name_dic,
-                          link_ids=link_names_to_ids_dic,
-                          **params_)
-            # store objects in member variable for future use
-            self.plugins.append(obj)
-            self.executor.add_node(obj)
+        self.init_plugins(plugins)
 
         self.get_logger().info('pybullet ROS wrapper initialized')
         self.timer = self.create_timer(1.0 / self.loop_rate, self.wrapper_callback)
@@ -124,13 +102,7 @@ class pyBulletRosWrapper(Node):
                 prismatic_joint_index_name_dic[joint_index] = info[1].decode('utf-8') # info[1] refers to joint name
         return rev_joint_index_name_dic, prismatic_joint_index_name_dic, fixed_joint_index_name_dic, link_names_to_ids_dic
 
-    def handle_reset_simulation(self, req):
-        """Callback to handle the service offered by this node to reset the simulation"""
-        self.get_logger().info('reseting simulation now')
-        self.pb.resetSimulation()
-        return Empty()
-
-    def start_gui(self, gui=True):
+    def start_engine(self, gui=True):
         """start physics engine (client) with or without gui"""
         if(gui):
             # start simulation with gui
@@ -145,70 +117,58 @@ class pyBulletRosWrapper(Node):
             self.get_logger().info('-------------------------')
             return self.pb.connect(self.pb.DIRECT)
 
-    def model_info_from_file(self, path):
-        file = open(path)
-        csv_reader = csv.reader(file)
-        # Skip header
-        next(csv_reader)
-        # Read model name and pose: x y z
-        rows = []
-        for row in csv_reader:
-            rows.append(row)
-        return rows
-    
-    def model_path_pose_from_file(self, path):
-        rows = self.model_info_from_file(path)
-        model_path_pose = []
-        for row in rows:
-            # set model path
-            model_path = str(get_package_share_path(row[0]) / row[1])
-
-            # set x, y, and z positions
-            model_pose = row[2:5]
-            model_pose = list(map(float, model_pose))
-
-            # set yaw pose
-            pose_yaw = float(row[5])
-
-            model_path_pose.append([model_path, model_pose, pose_yaw])        
-        return model_path_pose
-
     def load_urdf(self, path, pose, yaw, urdf_flags, fixed_base=False):
         orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, yaw])
 
         # test urdf file existance
         if not os.path.isfile(path):
             self.get_logger().error('file does not exist : ' + path)
-            rclpy.shutdown()
             return None
         # ensure urdf is not xacro, but if it is then make urdf file version out of it
         if 'xacro' in path:
-            # remove xacro from name
-            path_end_without_xacro = path.find('.xacro')
-            path_without_xacro = path[0: path_end_without_xacro]
-            os.system(f'xacro {path} -o {path_without_xacro}')
-            path = path_without_xacro
+            # generate URDF from XACRO
+            path = urdf_from_xacro(path)
 
         self.get_logger().info('loading urdf from file: ' + str(path))
         return self.pb.loadURDF(path, basePosition=pose,
                                         baseOrientation=orientation,
                                         useFixedBase=fixed_base, flags=urdf_flags)  
 
+    def init_parameters(self):
+        # get from param server the frequency at which to run the simulation
+        self.loop_rate = self.get_parameter('loop_rate').value  
+        self.get_logger().info('Loop rate: {}'.format(self.loop_rate))
+        # query from param server if gui is needed
+        self.is_gui_needed = self.get_parameter('pybullet_gui').value
+        # get from param server if user wants to pause simulation at startup
+        self.pause_simulation = self.get_parameter('pause_simulation').value
+        # create object of environment class for later use
+        self.env_plugin = self.get_parameter('environment').value # default : plugins/environment.py
+        self.plugin_import_prefix = self.get_parameter('plugin_import_prefix').value 
+
+    def init_services(self):
+        # setup service to restart simulation
+        self.create_service(Empty, 'reset_simulation', self.handle_reset_simulation)
+        # setup services for pausing/unpausing simulation
+        self.create_service(Empty, 'pause_physics', self.handle_pause_physics)
+        self.create_service(Empty, 'unpause_physics', self.handle_unpause_physics)
+
     def init_pybullet_models(self):
-        """load URDF models, set gravity, ground plane and environment"""
+        """load URDF models"""
         # load environment, set URDF flags
-        fixed_base, urdf_flags = self.init_environment()
-        pybullet_ros_dir = get_package_share_directory('pybullet_ros')
-        path_from_package = os.path.join('config', 'model_spawn.csv')
-        model_loader_path = os.path.join(pybullet_ros_dir, path_from_package)
-        rows = self.model_path_pose_from_file(model_loader_path)
+        fixed_base = self.get_parameter('fixed_base').value
+        rows = load_model_path_pose()
         self.get_logger().info('attempting to load urdf models...')
-        self.get_logger().info('total count: ' + str(len(rows)))
         models = []
         for row in rows:
             # load robot from URDF model
             # NOTE: self collision enabled by default
-            models.append(self.load_urdf(row[0], row[1], row[2], urdf_flags, fixed_base))
+            loaded_urdf = self.load_urdf(row[0], row[1], row[2], self.urdf_flags, fixed_base)
+            if loaded_urdf == None:
+                self.get_logger().error('file does not exist : ' + row[0])
+                rclpy.shutdown()
+            models.append(loaded_urdf)
+        self.get_logger().info('models have been loaded')
         return models[0]
 
     def init_environment(self):
@@ -218,7 +178,6 @@ class pyBulletRosWrapper(Node):
         self.environment.load_environment()
         # set no realtime simulation, NOTE: no need to stepSimulation if setRealTimeSimulation is set to 1
         self.pb.setRealTimeSimulation(0) # NOTE: does not currently work with effort controller, thats why is left as 0
-        fixed_base = self.get_parameter('fixed_base').value
         # user decides if inertia is computed automatically by pybullet or custom
         if self.get_parameter('use_inertia_from_file').value:
             # combining several boolean flags using "or" according to pybullet documentation
@@ -226,11 +185,27 @@ class pyBulletRosWrapper(Node):
         else:
             urdf_flags = self.pb.URDF_USE_SELF_COLLISION
 
-        return fixed_base, urdf_flags
+        return urdf_flags
+
+    def init_plugins(self, plugins):
+        for plugin in plugins:
+            module_, class_ = plugin.split(':')
+            params_ = {'module': module_, 'class': class_}
+            self.get_logger().info('loading plugin: {} class from {}'.format(class_, module_))
+            # create object of the imported file class
+            obj = getattr(importlib.import_module(module_), class_)(self.pb, self.robot,
+                          rev_joints=self.rev_joint_index_name_dic,
+                          prism_joints=self.prismatic_joint_index_name_dic,
+                          fixed_joints=self.fixed_joint_index_name_dic,
+                          link_ids=self.link_names_to_ids_dic,
+                          **params_)
+            # store objects in member variable for future use
+            self.plugins.append(obj)
+            self.executor.add_node(obj)
 
     def handle_reset_simulation(self, req):
         """Callback to handle the service offered by this node to reset the simulation"""
-        self.get_logger().info('reseting simulation now')
+        self.get_logger().info('resetting simulation now')
         # pause simulation to prevent reading joint values with an empty world
         self.pause_simulation = True
         # remove all objects from the world and reset the world to initial conditions

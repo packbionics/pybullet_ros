@@ -39,6 +39,7 @@ setup(
     description='ROS2 wrapper for pybullet simulator',
     license='MIT',
     tests_require=['pytest'],
+    scripts=['pybullet_ros/utils.py'],
     entry_points={
         'console_scripts': [
             'pybullet_ros_wrapper = pybullet_ros.pybullet_ros_wrapper:main'
