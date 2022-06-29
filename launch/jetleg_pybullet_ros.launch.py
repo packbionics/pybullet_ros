@@ -15,7 +15,9 @@ def generate_launch_description():
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
     description_dir = get_package_share_path('jetleg_description')
     
-    default_model_path = description_dir / 'urdf/wheeled_testrig.xacro'
+    default_model_path = description_dir / 'urdf/jetleg_standalone.xacro'
+
+    model_spec_path = os.path.join(pybullet_ros_dir, 'config/model_descriptions.yaml')
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
     
@@ -81,6 +83,12 @@ def generate_launch_description():
             text='""'
         )
     )
+    models_to_load_arg = DeclareLaunchArgument(
+        "models_to_load",
+        default_value=TextSubstitution(
+            text=str(model_spec_path)
+        )
+    )
 
     config_file = LaunchConfiguration('config_file')
     plugin_import_prefix = LaunchConfiguration('plugin_import_prefix')
@@ -92,6 +100,7 @@ def generate_launch_description():
     use_deformable_world = LaunchConfiguration('use_deformable_world')
     gui_options = LaunchConfiguration('gui_options')
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+    models_to_load = LaunchConfiguration('models_to_load')
 
     robot_urdf = Command(['xacro',' ',LaunchConfiguration('model')])
 
@@ -106,7 +115,8 @@ def generate_launch_description():
             "fixed_base": fixed_base,
             "use_deformable_world": use_deformable_world,
             "gui_options": gui_options,
-            "use_sim_time": use_sim_time
+            "use_sim_time": use_sim_time,
+            "models_to_load": models_to_load
         }
     ]
 
@@ -121,6 +131,7 @@ def generate_launch_description():
         fixed_base_arg,
         use_deformable_world_arg,
         gui_options_arg,
+        models_to_load_arg,
         Node(
             package='pybullet_ros',
             executable='pybullet_ros_wrapper',

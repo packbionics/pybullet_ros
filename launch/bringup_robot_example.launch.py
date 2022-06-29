@@ -99,7 +99,7 @@ def generate_launch_description():
     gui_options_arg = DeclareLaunchArgument(
         "gui_options", 
         default_value=TextSubstitution(
-            text=""
+            text='""'
         )
     )
 
@@ -158,12 +158,12 @@ def generate_launch_description():
             output='screen',
             parameters=pybullet_ros_parameters
         ),
-        Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            name='robot_state_publisher',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time, 
-                         'robot_description': Command(['xacro',' ', robot_urdf_path])}]
-        )
+        # Node(
+        #     package='robot_state_publisher',
+        #     executable='robot_state_publisher',
+        #     name='robot_state_publisher',
+        #     output='screen',
+        #     parameters=[{'use_sim_time': use_sim_time, 
+        #                  'robot_description': Command(['xacro',' ', robot_urdf_path])}]
+        # )
     ])

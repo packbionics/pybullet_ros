@@ -69,8 +69,5 @@ def urdf_from_xacro(xacro_path):
     os.system(f'xacro {xacro_path} -o {path_without_xacro}')
     return path_without_xacro 
 
-def load_model_path_pose():
-    pybullet_ros_dir = get_package_share_directory('pybullet_ros')
-    path_from_package = os.path.join('config', 'model_descriptions.yaml')
-    model_loader_path = os.path.join(pybullet_ros_dir, path_from_package)
+def load_model_path_pose(model_loader_path):
     return model_path_pose_from_file(model_loader_path)

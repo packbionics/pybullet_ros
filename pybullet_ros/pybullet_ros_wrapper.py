@@ -157,7 +157,8 @@ class pyBulletRosWrapper(Node):
         """load URDF models"""
         # load environment, set URDF flags
         fixed_base = self.get_parameter('fixed_base').value
-        rows = load_model_path_pose()
+        model_loader_path = self.get_parameter('models_to_load').value
+        rows = load_model_path_pose(model_loader_path)
         self.get_logger().info('attempting to load urdf models...')
         models = []
         for row in rows:
