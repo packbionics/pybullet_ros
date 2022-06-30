@@ -1,8 +1,8 @@
----
 test_rig:
   Package: jetleg_description
-  Model: urdf/wheeled_testrig.xacro
-  X-Coord: 0.0
-  Y-Coord: 0.0
-  Z-Coord: 0.1
+  RelPath: urdf/wheeled_testrig.xacro
+  Pose:
+    - 0.0
+    - 0.0
+    - 0.1
   Yaw: 0.0

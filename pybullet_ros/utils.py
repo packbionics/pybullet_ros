@@ -1,73 +1,61 @@
-import csv
 import yaml
 import os
 
 from ament_index_python import get_package_share_path
-from ament_index_python import get_package_share_directory
-
-def model_info_from_yaml(path):
-    file = open(path)
-    rows = []
-
-    package_key = "Package"
-    model_path_key = "Model"
-    x_coord_key = "X-Coord"
-    y_coord_key = "Y-Coord"
-    z_coord_key = "Z-Coord"
-    yaw_key = "Yaw"
-
-    try:
-        yaml_contents = yaml.safe_load(file)
-        for model in yaml_contents:
-            description = yaml_contents[model]
-            row = []
-            row.append(description[package_key])
-            row.append(description[model_path_key])
-            row.append(description[x_coord_key])
-            row.append(description[y_coord_key])
-            row.append(description[z_coord_key])
-            row.append(description[yaw_key])
-            rows.append(row)
-    except yaml.YAMLError as exc:
-        print(exc)
-    return rows
-
-def model_info_from_csv(path):
-        file = open(path)
-        csv_reader = csv.reader(file)
-        # Skip header
-        next(csv_reader)
-        # Read model name and pose: x y z
-        rows = []
-        for row in csv_reader:
-            rows.append(row)
-        return rows
-    
-def model_path_pose_from_file(path):
-    rows = model_info_from_yaml(path)
-    model_path_pose = []
-    for row in rows:
-        # set model path
-        model_path = str(get_package_share_path(row[0]) / row[1])
-
-        # set x, y, and z positions
-        model_pose = row[2:5]
-        model_pose = list(map(float, model_pose))
-
-        # set yaw pose
-        pose_yaw = float(row[5])
-
-        model_path_pose.append([model_path, model_pose, pose_yaw])        
-    return model_path_pose
 
 def urdf_from_xacro(xacro_path):
     # remove xacro from name
     path_end_without_xacro = xacro_path.find('.xacro')
     path_without_xacro = xacro_path[0: path_end_without_xacro]
 
-    # use xacro command to generate URDF from XACRO
+    # use xacro command to generate URDF from XACRO and return path of new file
     os.system(f'xacro {xacro_path} -o {path_without_xacro}')
     return path_without_xacro 
 
-def load_model_path_pose(model_loader_path):
-    return model_path_pose_from_file(model_loader_path)
+
+class ModelLoader:
+
+    def __init__(self, path):
+        # keys to access values from yaml contents dictionary
+        self.package_key = "Package"         # name of package containing URDF or XACRO
+        self.model_path_key = "RelPath"      # path of URDF or XACRO relative to package
+        self.abs_path_key = "AbsPath"        # absolute path of URDF or XACRO (generated from package path and relative URDF or XACRO path)
+        self.pose_key = "Pose"               # xyz pose of model
+        self.yaw_key = "Yaw"                 # yaw orientation of model
+
+        self.models = self.load_models_from_file(path)
+
+    def load_from_yaml(self, path):
+        # open file for reading
+        file = open(path, "r")
+        yaml_contents = {}
+
+        try:
+            # load contents into python dictionary
+            yaml_contents = yaml.safe_load(file)
+        except yaml.YAMLError as exc:
+            print(exc)
+        # return yaml contents as dictionary
+        return yaml_contents
+        
+    def load_models_from_file(self, path):
+
+        models = self.load_from_yaml(path)
+        model_path_pose = []
+        for model_key in models:
+            # current model to load
+            model = models[model_key]
+            # set model path
+            model_path = str(get_package_share_path(model[self.package_key]) / model[self.model_path_key])
+            # set x, y, and z positions
+            model_pose = model[self.pose_key]
+            # set yaw pose
+            pose_yaw = model[self.yaw_key]
+
+            model_dict = {
+                self.abs_path_key: model_path,
+                self.pose_key: model_pose,
+                self.yaw_key: pose_yaw
+            }
+            model_path_pose.append(model_dict)        
+        return model_path_pose

@@ -9,7 +9,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_srvs.srv import Empty
 
-from utils import load_model_path_pose
+from utils import ModelLoader
 from utils import urdf_from_xacro
 
 class pyBulletRosWrapper(Node):
@@ -158,19 +158,19 @@ class pyBulletRosWrapper(Node):
         # load environment, set URDF flags
         fixed_base = self.get_parameter('fixed_base').value
         model_loader_path = self.get_parameter('models_to_load').value
-        rows = load_model_path_pose(model_loader_path)
+        model_loader = ModelLoader(model_loader_path)
         self.get_logger().info('attempting to load urdf models...')
-        models = []
-        for row in rows:
+        model_id_list = []
+        for model in model_loader.models:
             # load robot from URDF model
             # NOTE: self collision enabled by default
-            loaded_urdf = self.load_urdf(row[0], row[1], row[2], self.urdf_flags, fixed_base)
+            loaded_urdf = self.load_urdf(model[model_loader.abs_path_key], model[model_loader.pose_key], model[model_loader.yaw_key], self.urdf_flags, fixed_base)
             if loaded_urdf == None:
-                self.get_logger().error('file does not exist : ' + row[0])
+                self.get_logger().error('file does not exist : ' + model[0])
                 rclpy.shutdown()
-            models.append(loaded_urdf)
+            model_id_list.append(loaded_urdf)
         self.get_logger().info('models have been loaded')
-        return models[0]
+        return model_id_list[0]
 
     def init_environment(self):
         """set gravity, ground plane and environment"""
