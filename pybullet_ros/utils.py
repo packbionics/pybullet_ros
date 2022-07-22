@@ -18,7 +18,7 @@ class ModelLoader:
     def __init__(self, path):
         # keys to access values from yaml contents dictionary
         self.package_key = "Package"         # name of package containing URDF or XACRO
-        self.model_path_key = "RelPath"      # path of URDF or XACRO relative to package
+        self.model_path_key = "RelPath"      # path of URDF or XACRO relative to package directory
         self.abs_path_key = "AbsPath"        # absolute path of URDF or XACRO (generated from package path and relative URDF or XACRO path)
         self.pose_key = "Pose"               # xyz pose of model
         self.yaw_key = "Yaw"                 # yaw orientation of model

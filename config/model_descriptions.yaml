@@ -1,6 +1,6 @@
 test_rig:
   Package: jetleg_description
-  RelPath: urdf/wheeled_testrig.xacro
+  RelPath: urdf/testrig_vision.xacro
   Pose:
     - 0.0
     - 0.0
