@@ -52,14 +52,12 @@ def generate_launch_description():
     gui_options = LaunchConfiguration('gui_options')
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     models_to_load = LaunchConfiguration('models_to_load')
+    model = LaunchConfiguration('model')
 
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
 
     # path of file describing robots to load
-    model_config_file_path = os.path.join(pybullet_ros_dir, 'config/model_descriptions.yaml')
-
-    # path of model used by robot_state_publisher
-    default_model_path = get_robot_path(model_config_file_path)
+    model_config_file_path = os.path.join(pybullet_ros_dir, 'config/jetleg_pybullet_ros_model_config.yaml')
 
     # config file defining pybullet parameters
     default_config_file_path = os.path.join(pybullet_ros_dir, "config/jetleg_params.yaml")
@@ -128,6 +126,10 @@ def generate_launch_description():
         "models_to_load",
         default_value=model_config_file
     )
+    model_arg = DeclareLaunchArgument(
+        "model",
+        default_value=get_robot_path(model_config_file_path)
+    )
 
     pybullet_ros_parameters=[
         config_file,
@@ -144,6 +146,8 @@ def generate_launch_description():
         }
     ]
 
+    robot_urdf = Command(['xacro',' ', model])
+
     return LaunchDescription([
         config_file_arg,
         model_config_file_arg,
@@ -156,19 +160,19 @@ def generate_launch_description():
         use_deformable_world_arg,
         gui_options_arg,
         models_to_load_arg,
+        model_arg,
         Node(
             package='pybullet_ros',
             executable='pybullet_ros_wrapper',
             output='screen',
             parameters=pybullet_ros_parameters
         ),
-        # Node(
-        #     package='robot_state_publisher',
-        #     executable='robot_state_publisher',
-        #     name='robot_state_publisher',
-        #     output='screen',
-        #     parameters=[{'use_sim_time': use_sim_time, 
-        #                  'robot_description': robot_urdf}],
-        #     arguments=[robot_urdf]
-        # )
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time, 
+                         'robot_description': robot_urdf}],
+        )
     ])
