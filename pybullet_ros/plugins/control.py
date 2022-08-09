@@ -10,14 +10,32 @@ from std_msgs.msg import Float64
 # NOTE: 2 classes are implemented here, scroll down to the next class (Control) to see the plugin!
 
 class PveControl:
-    """helper class to receive position, velocity or effort (pve) control commands"""
+    """helper class to receive position, velocity or effort (pve) control commands
+
+    Attributes:
+        node (Node): ROS 2 node
+        subscription (Subscription): subscription used to receive input commands from ROS 2 topic
+        cmd (float): value of the last received command
+        data_available (bool): determines if there is more data to process
+        joint_index (int): index of joint used by Pybullet
+        joint_name (str): name of joint
+    """
+
     def __init__(self, node, joint_index, joint_name, controller_type):
         """constructor
+
         Assumes joint_name is unique, creates multiple subscribers to receive commands
         joint_index - stores an integer joint identifier
         joint_name - string with the name of the joint as described in urdf model
         controller_type - position, velocity or effort
+
+        Args:
+            node (Node): ROS 2 node
+            joint_index (int): index of joint used by Pybullet
+            joint_name (str): name of joint
+            controller_type (str): type of control used. Possible values may be 'position', 'velocity', or 'effort'
         """
+
         assert(controller_type in ['position', 'velocity', 'effort'])
         self.node = node
         self.node.get_logger().info("subscribing to "+ joint_name + '_' + controller_type + '_controller/command')
@@ -34,31 +52,79 @@ class PveControl:
 
     def pve_controlCB(self, msg):
         """position, velocity or effort callback
-        msg - the msg passed by the ROS network via topic publication
+
+        Args:
+            msg (Float64): the msg passed by the ROS network via topic publication
         """
+
         self.data_available = True
         self.cmd = msg.data
 
     def get_last_cmd(self):
-        """method to fetch the last received command"""
+        """method to fetch the last received command
+
+        Returns:
+            float: value of the last received command
+        """
+
         self.data_available = False
         return self.cmd
 
     def get_is_data_available(self):
-        """method to retrieve flag to indicate that a command has been received"""
+        """method to retrieve flag to indicate that a command has been received
+
+        Returns:
+            bool: determines if there is more data to process
+        """
+
         return self.data_available
 
     def get_joint_name(self):
-        """Unused method provided for completeness (pybullet works based upon joint index, not names)"""
+        """Unused method provided for completeness (pybullet works based upon joint index, not names)
+
+        Returns:
+            str: name of associated joint
+        """
+        
         return self.joint_name
 
     def get_joint_index(self):
-        """method used to retrieve the joint int index that this class points to"""
+        """method used to retrieve the joint int index that this class points to
+
+        Returns:
+            int: index of associated joint
+        """
+
         return self.joint_index
 
 # plugin is implemented below
 class Control(Node):
+    """position, velocity and effort control for all revolute and prismatic joints on the robot
+
+    Attributes:
+        rate (float): determines the rate of execute()
+        timer (Timer): handles the main loop of the plugin
+        pb (ModuleType): used to access Pybullet API
+        robot (int): id for the first loaded robot
+        position_joint_commands (list): contains history of position commands
+        velocity_joint_commands (list): contains history of velocity commands
+        effort_joint_commands (list): contains history of effort commands
+        max_effort (float): maximum effort to process for any type of control
+        joint_index_name_dic (dict): dictionary of joint index to joint names
+        pc_subscribers (list): list of position control command subscribers
+        vc_subscribers (list): list of velocity control command subscribers
+        ec_subscribers (list): list of effort control command subscribers
+        joint_indices (list): list of joint indices
+    """
+
     def __init__(self, pybullet, robot, **kargs):
+        """constructor
+
+        Args:
+            pybullet (ModuleType): used to access Pybullet API
+            robot (int): first robot loaded
+        """
+
         super().__init__('pybullet_ros_control',
                          automatically_declare_parameters_from_overrides=True)
         self.rate = self.get_parameter('loop_rate').value
@@ -102,8 +168,11 @@ class Control(Node):
             self.ec_subscribers.append(PveControl(self, joint_index, joint_name, 'effort'))
 
     def execute(self):
-        """this function gets called from pybullet ros main update loop"""
-        """check if user has commanded a joint and forward the request to pybullet"""
+        """this function gets called from pybullet ros main update loop
+
+        check if user has commanded a joint
+        and forward the request to pybullet
+        """
         
         self.position_ctrl_joint_indices = []
         self.velocity_ctrl_joint_indices = []
