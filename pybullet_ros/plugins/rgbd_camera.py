@@ -24,7 +24,38 @@ from pointcloud_interfaces.srv import CameraParams
 
 
 class RGBDCamera(Node):
+    """Plugin used to process camera frames from simulated camera in Pybullet
+
+    Attributes:
+        rate (float): _description_
+        timer (Timer): _description_
+        pb (ModuleType): _description_
+        robot (int): _description_
+        camera_pose_msg (PoseStamped): _description_
+        camera_position (Point): _description_
+        camera_orientation (Quaternion): _description_
+        image_msg (Image): _description_
+        image_mode (str): _description_
+        pb_camera_link_id (int): _description_
+        pub_camera_state (_type_): _description_
+        pub_image (Image): _description_
+        hfov (float): _description_
+        vfov (float): _description_
+        near_plane (float): _description_
+        far_plane (float): _description_
+        projection_matrix (numpy.array): _description_
+        camera_params_serv (CameraParams): _description_
+        image_bridge (CvBridge): _description_
+    """
+
     def __init__(self, pybullet, robot, **kargs):
+        """sets up parameters, topics, and services
+
+        Args:
+            pybullet (ModuleType): used to access Pybullet API
+            robot (int): first robot loaded
+        """
+
         super().__init__('pybullet_ros_rgbd_camera')
         self.rate = self.declare_parameter('loop_rate', 80.0).value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
@@ -85,6 +116,16 @@ class RGBDCamera(Node):
         self.get_logger().info('  frame_id: {}'.format(self.image_msg.header.frame_id))
 
     def camera_params_callback(self, request, response):
+        """handles request for service
+
+        Args:
+            request (CameraParams.Request): holds information related to service request from client
+            response (CameraParams): used to send details of the physical (or simulated) camera
+
+        Returns:
+            CameraParams: details of the physical (or simulated) camera
+        """
+
         response.hfov = self.hfov
         response.vfov = self.vfov
         
@@ -95,6 +136,12 @@ class RGBDCamera(Node):
         return response
 
     def compute_projection_matrix(self):
+        """calculated a 4x4 project matrix based on intrinsic camera parameters
+
+        Returns:
+            numpy.array: 4x4 project matrix
+        """
+
         return self.pb.computeProjectionMatrix(
                     left=-math.tan(math.pi * self.hfov / 360.0) * self.near_plane,
                     right=math.tan(math.pi * self.hfov / 360.0) * self.near_plane,
@@ -104,6 +151,15 @@ class RGBDCamera(Node):
                     farVal=self.far_plane)
 
     def extract_frame(self, camera_image):
+        """retrieves the RGB information from a frame of the camera
+
+        Args:
+            camera_image (numpy.array): numpy array containing frame in RGBA format
+
+        Returns:
+            numpy.array: numpy array containing frame in RGB format
+        """
+
         camera_image = np.reshape(camera_image[2], (camera_image[1], camera_image[0], 4))
 
         rgb_image = camera_image[:,:,:3]
@@ -112,6 +168,15 @@ class RGBDCamera(Node):
         return rgb_image.astype(np.uint8)
 
     def extract_depth(self, camera_image):
+        """retrieves depth information from a frame of the camera
+
+        Args:
+            camera_image (numpy.array): numpy array containing frame in RGBA format
+
+        Returns:
+            numpy.array: numpy array containing depth information in range 0.0 - 1.0
+        """
+
         # Extract depth buffer
         depth_buffer = np.reshape(camera_image[3], (camera_image[1], camera_image[0]))
 
@@ -126,11 +191,20 @@ class RGBDCamera(Node):
             return depth_buffer
 
     def compute_camera_target(self, camera_position, camera_orientation):
-        """
+        """calculates a position 5m in front of the camera
+
         camera target is a point 5m in front of the robot camera
         This method is used to tranform it to the world reference frame
         NOTE: this method uses pybullet functions and not tf
+
+        Args:
+            camera_position (numpy.array): XYZ position of the camera
+            camera_orientation (numpy.array): Quaternion representation of the camera orientation
+
+        Returns:
+            np.array: a XYZ position 5m in front of the camera
         """
+
         target_point = [5.0, 0, 0] # expressed w.r.t camera reference frame
         camera_position = [camera_position[0], camera_position[1], camera_position[2]]
         rm = self.pb.getMatrixFromQuaternion(camera_orientation)
@@ -138,6 +212,8 @@ class RGBDCamera(Node):
         return np.dot(rotation_matrix, target_point) + camera_position
 
     def execute(self):
+        """main loop of the plugin"""
+
         # get camera pose
         cam_state = self.pb.getLinkState(self.robot, self.pb_camera_link_id)
         # target is a point 5m ahead of the robot camera expressed w.r.t world reference frame
