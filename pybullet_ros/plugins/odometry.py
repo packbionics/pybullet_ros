@@ -11,7 +11,30 @@ from tf2_ros import TransformBroadcaster, TransformStamped
 
 
 class SimpleOdometry(Node):
+    """Handles odometry for main robot
+
+    Query robot base pose and speed from pybullet and publish to /odom topic.
+    This component does not add any noise to it
+
+    Attributes:
+        rate (float): rate at which to execute main loop of plugin
+        timer (Timer): handles the main loop of the plugin
+        pb (ModuleType): used to access Pybullet API
+        robot (int): id of the first loaded robot
+        pub_odometry (Publisher): publisher to broadcast odometry of the robot
+        odom_msg (Odometry): contains the odometry information of the robot
+        odom_trans (TransformStamped): contains transformed odometry information of the robot
+        br (TransformBroadcaster): broadcasts the transforms of the robot link
+    """
+
     def __init__(self, pybullet, robot, **kargs):
+        """Handles odometry for main robot
+
+        Args:
+            pybullet (ModuleType): used to access Pybullet API
+            robot (int): first robot loaded
+        """
+
         super().__init__('pybullet_ros_odometry', 
             automatically_declare_parameters_from_overrides=True)
         self.rate = self.get_parameter('loop_rate').value
