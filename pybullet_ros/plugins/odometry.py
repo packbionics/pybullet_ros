@@ -9,8 +9,9 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, TransformStamped
 
+from pybullet_ros.plugins.ros_plugin import RosPlugin
 
-class SimpleOdometry(Node):
+class SimpleOdometry(RosPlugin):
     """Handles odometry for main robot
 
     Query robot base pose and speed from pybullet and publish to /odom topic.
@@ -35,14 +36,12 @@ class SimpleOdometry(Node):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_odometry', 
-            automatically_declare_parameters_from_overrides=True)
+        super().__init__('pybullet_ros_odometry', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        
+        # define plugin loop
         self.rate = self.get_parameter('loop_rate').value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
-        # get "import pybullet as pb" and store in self.pb
-        self.pb = pybullet
-        # get robot from parent class
-        self.robot = robot
+
         # register this node as a /odom publisher
         self.pub_odometry = self.create_publisher(Odometry, 'odom', 1)
         # save some overhead by setting some information only once

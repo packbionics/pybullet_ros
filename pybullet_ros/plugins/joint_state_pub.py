@@ -6,8 +6,9 @@ query robot state and publish position, velocity and effort values to /joint_sta
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
+from pybullet_ros.plugins.ros_plugin import RosPlugin
 
-class JointStatePub(Node):
+class JointStatePub(RosPlugin):
     """query robot state and publish position, velocity and effort values to /joint_states
 
     Attributes:
@@ -29,10 +30,12 @@ class JointStatePub(Node):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_joint_state_pub', 
-            automatically_declare_parameters_from_overrides=True)
+        super().__init__('pybullet_ros_joint_state_pub', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+
+        # define plugin loop
         self.rate = self.get_parameter('loop_rate').value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
+
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
         # get robot from parent class

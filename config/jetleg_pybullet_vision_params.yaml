@@ -39,3 +39,4 @@
     rgbd_camera/vfov: 70.0
     rgbd_camera/near_plane: 1.0
     rgbd_camera/far_plane: 20.0
+    rgbd_camera/resolution/is_bigendian: False

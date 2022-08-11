@@ -4,13 +4,11 @@
 RGBD camera sensor simulation for pybullet_ros base on pybullet.getCameraImage()
 """
 
-from os.path import exists
 import math
-from re import S
 
 import numpy as np
 import rclpy
-import cv2
+import rclpy.qos
 from cv_bridge import CvBridge
 from rclpy.node import Node
 
@@ -21,10 +19,10 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Quaternion
 
-from pointcloud_interfaces.srv import CameraParams
+from pybullet_ros.plugins.ros_plugin import RosPlugin
 
 
-class RGBDCamera(Node):
+class RGBDCamera(RosPlugin):
     """Plugin used to process camera frames from simulated camera in Pybullet
 
     Attributes:
@@ -57,26 +55,26 @@ class RGBDCamera(Node):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_rgbd_camera')
-        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        super().__init__('pybullet_ros_rgbd_camera', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+
+        # define plugin loop
+        self.rate = self.get_parameter('loop_rate').value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
-        # get "import pybullet as pb" and store in self.pb
-        self.pb = pybullet
-        # get robot from parent class
-        self.robot = robot
+        
         # create msg placeholders for publication
         self.camera_pose_msg = PoseStamped()
         self.camera_position = Point()
         self.camera_orientation = Quaternion()
         self.image_msg = Image()
-        self.image_mode = self.declare_parameter('image_mode', 'rgb8').value
+        
+        self.image_mode = self.get_parameter('image_mode').value
         assert self.image_mode in ['rgb', 'rgbd', 'depth', 'segmentation']
         # get RGBD camera parameters from ROS param server
-        self.image_msg.width = self.declare_parameter('rgbd_camera/resolution/width', 640).value
-        self.image_msg.height = self.declare_parameter('rgbd_camera/resolution/height', 480).value
+        self.image_msg.width = self.get_parameter('rgbd_camera/resolution/width').value
+        self.image_msg.height = self.get_parameter('rgbd_camera/resolution/height').value
         assert(self.image_msg.width > 5)
         assert(self.image_msg.height > 5)
-        cam_frame_id = self.declare_parameter('rgbd_camera/frame_id', None).value
+        cam_frame_id = self.get_parameter('rgbd_camera/frame_id').value
         if not cam_frame_id:
             self.get_logger().error('Required parameter rgbd_camera/frame_id not set, will exit now...')
             rclpy.shutdown()
@@ -92,20 +90,20 @@ class RGBDCamera(Node):
         self.image_msg.header.frame_id = cam_frame_id
         # create publishers
         self.pub_camera_state = self.create_publisher(PoseStamped, 'camera/state', 2)
-        self.pub_image = self.create_publisher(Image, 'camera/depth/image_raw', 10)
-        self.pub_camera_info = self.create_publisher(CameraInfo, 'camera/info', 10)
-        self.image_msg.encoding = self.declare_parameter('rgbd_camera/resolution/encoding', 'rgb8').value
-        self.image_msg.is_bigendian = self.declare_parameter('rgbd_camera/resolution/is_bigendian', 0).value
-        self.image_msg.step = self.declare_parameter('rgbd_camera/resolution/step', 1920).value
+        self.pub_image = self.create_publisher(Image, 'camera/depth/image_raw', rclpy.qos.qos_profile_sensor_data)
+        self.pub_camera_info = self.create_publisher(CameraInfo, 'camera/info', rclpy.qos.qos_profile_sensor_data)
+
+        self.image_msg.encoding = self.get_parameter('rgbd_camera/resolution/encoding').value
+        self.image_msg.is_bigendian = self.get_parameter('rgbd_camera/resolution/is_bigendian').value
+        self.image_msg.step = self.get_parameter('rgbd_camera/resolution/step').value
         assert self.image_msg.encoding in ['32FC1'] + ['mono8', 'mono16', 'bgr8', 'rgb8', 'bgra8', 'rgba8', 'passthrough']
+        
         # projection matrix
-        self.hfov = self.declare_parameter('rgbd_camera/hfov', 56.3).value
-        self.vfov = self.declare_parameter('rgbd_camera/vfov', 43.7).value
-        self.near_plane = self.declare_parameter('rgbd_camera/near_plane', 0.4).value
-        self.far_plane = self.declare_parameter('rgbd_camera/far_plane', 8.0).value
+        self.hfov = self.get_parameter('rgbd_camera/hfov').value
+        self.vfov = self.get_parameter('rgbd_camera/vfov').value
+        self.near_plane = self.get_parameter('rgbd_camera/near_plane').value
+        self.far_plane = self.get_parameter('rgbd_camera/far_plane').value
         self.projection_matrix = self.compute_projection_matrix()
-        # create service
-        self.camera_params_serv = self.create_service(CameraParams, 'camera/params', self.camera_params_callback)
 
         # use cv_bridge ros to convert cv matrix to ros format
         self.image_bridge = CvBridge()
@@ -126,10 +124,13 @@ class RGBDCamera(Node):
         # distortion parameters (no distortion in simulation)
         self.camera_info.d = [0.0] * 5
 
+        self.image_center = (self.image_msg.width / 2, self.image_msg.height / 2)
+        self.focal_lengths = (self.image_center[0] / math.tan(self.hfov), self.image_center[1] / math.tan(self.vfov))
+
         # intrinsic camera matrix
-        self.camera_info.k = [  450.0, 0.0,    640.0,
-                                0.0,   515.0,  320.0,
-                                0.0,   0.0,    1.0  ]
+        self.camera_info.k = [  self.focal_lengths[0],  0.0,                    self.image_center[0],
+                                0.0,                    self.focal_lengths[1],  self.image_center[1],
+                                0.0,                    0.0,                    1.0                  ]
 
         # rectification matrix (identify matrix for monocular camera)
         self.camera_info.r = [  1.0, 0.0, 0.0,
@@ -137,9 +138,9 @@ class RGBDCamera(Node):
                                 0.0, 0.0, 1.0]
 
         # projection matrix
-        self.camera_info.p = [  450.0, 0.0,    640.0,  0.0,
-                                0.0,   515.0,  320.0,  0.,
-                                0.0,   0.0,    0.0,    1.0]
+        self.camera_info.p = [  self.focal_lengths[0],  0.0,                    self.image_center[0],   0.0,
+                                0.0,                    self.focal_lengths[1],  self.image_center[1],   0.0,
+                                0.0,                    0.0,                    0.0,                    1.0]
 
         self.get_logger().info('RGBD camera plugin initialized, camera parameters:')
         self.get_logger().info('  hfov: {}'.format(self.hfov))
@@ -148,26 +149,6 @@ class RGBDCamera(Node):
         self.get_logger().info('  far_plane: {}'.format(self.far_plane))
         self.get_logger().info('  resolution: {}x{}'.format(self.image_msg.width, self.image_msg.height))
         self.get_logger().info('  frame_id: {}'.format(self.image_msg.header.frame_id))
-
-    def camera_params_callback(self, request, response):
-        """handles request for service
-
-        Args:
-            request (CameraParams.Request): holds information related to service request from client
-            response (CameraParams): used to send details of the physical (or simulated) camera
-
-        Returns:
-            CameraParams: details of the physical (or simulated) camera
-        """
-
-        response.hfov = self.hfov
-        response.vfov = self.vfov
-        
-        response.near = self.near_plane
-        response.far = self.far_plane
-
-        self.get_logger().info('sending service response...')
-        return response
 
     def compute_projection_matrix(self):
         """calculated a 4x4 project matrix based on intrinsic camera parameters

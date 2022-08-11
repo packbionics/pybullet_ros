@@ -7,6 +7,8 @@ position, velocity and effort control for all revolute joints on the robot
 from rclpy.node import Node
 from std_msgs.msg import Float64
 
+from pybullet_ros.plugins.ros_plugin import RosPlugin
+
 # NOTE: 2 classes are implemented here, scroll down to the next class (Control) to see the plugin!
 
 class PveControl:
@@ -98,7 +100,7 @@ class PveControl:
         return self.joint_index
 
 # plugin is implemented below
-class Control(Node):
+class Control(RosPlugin):
     """position, velocity and effort control for all revolute and prismatic joints on the robot
 
     Attributes:
@@ -125,15 +127,12 @@ class Control(Node):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_control',
-                         automatically_declare_parameters_from_overrides=True)
+        super().__init__('pybullet_ros_control', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+
+        # define plugin loop
         self.rate = self.get_parameter('loop_rate').value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
 
-        # get "import pybullet as pb" and store in self.pb
-        self.pb = pybullet
-        # get robot from parent class
-        self.robot = robot
         # lists to recall last received command (useful when controlling multiple joints)
         self.position_joint_commands = []
         self.velocity_joint_commands = []

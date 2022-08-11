@@ -16,16 +16,16 @@ from geometry_msgs.msg import Twist, Vector3, Vector3Stamped
 from rclpy.duration import Duration
 from rclpy.node import Node
 
+from pybullet_ros.plugins.ros_plugin import RosPlugin
 
-class CmdVelCtrl(Node):
+class CmdVelCtrl(RosPlugin):
     def __init__(self, pybullet, robot, **kargs):
-        super().__init__('pybullet_ros_cmd_vel')
-        self.rate = self.declare_parameter('loop_rate', 80.0).value
+        super().__init__('pybullet_ros_cmd_vel', pybullet, robot)
+
+        # define plugin loop
+        self.rate = self.get_parameter('loop_rate').value
         self.timer = self.create_timer(1.0/self.rate, self.execute)
-        # get "import pybullet as pb" and store in self.pb
-        self.pb = pybullet
-        # get robot from parent class
-        self.robot = robot
+        
         # subscribe to robot velocity commands
         self.cmd_vel_msg = None
         self.received_cmd_vel_time = None
