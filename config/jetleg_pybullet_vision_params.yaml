@@ -29,12 +29,12 @@
 /pybullet_ros_rgbd_camera:
   ros__parameters:
     loop_rate:              30.0
-    image_mode:             rgbd
+    image_mode:             depth
     rgbd_camera/frame_id:   camera_link
-    rgbd_camera/resolution/encoding: 8UC1
+    rgbd_camera/resolution/encoding: 32FC1
     rgbd_camera/resolution/width:  1280
     rgbd_camera/resolution/height: 720
-    rgbd_camera/resolution/step: 1280
+    rgbd_camera/resolution/step: 5120
     rgbd_camera/hfov: 110.0
     rgbd_camera/vfov: 70.0
     rgbd_camera/near_plane: 1.0
