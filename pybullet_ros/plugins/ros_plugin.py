@@ -23,6 +23,10 @@ class RosPlugin(Node):
             super().__init__(self.name)
         # TODO: implement here...
 
+        # define plugin loop
+        self.rate = self.get_parameter('loop_rate').value
+        self.timer = self.create_timer(1.0/self.rate, self.execute)
+
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
         self.node.get_logger().info('my plugin is running!')

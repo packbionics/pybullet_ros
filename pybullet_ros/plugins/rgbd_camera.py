@@ -5,6 +5,7 @@ RGBD camera sensor simulation for pybullet_ros base on pybullet.getCameraImage()
 """
 
 import math
+from turtle import width
 
 import numpy as np
 import rclpy
@@ -56,10 +57,6 @@ class RGBDCamera(RosPlugin):
         """
 
         super().__init__('pybullet_ros_rgbd_camera', pybullet, robot, automatically_declare_parameters_from_overrides=True)
-
-        # define plugin loop
-        self.rate = self.get_parameter('loop_rate').value
-        self.timer = self.create_timer(1.0/self.rate, self.execute)
         
         # create msg placeholders for publication
         self.camera_pose_msg = PoseStamped()
@@ -124,8 +121,10 @@ class RGBDCamera(RosPlugin):
         # distortion parameters (no distortion in simulation)
         self.camera_info.d = [0.0] * 5
 
+        self.fov = (math.radians(self.hfov), math.radians(self.vfov))
+
         self.image_center = (self.image_msg.width / 2, self.image_msg.height / 2)
-        self.focal_lengths = (self.image_center[0] / math.tan(self.hfov), self.image_center[1] / math.tan(self.vfov))
+        self.focal_lengths = (self.image_center[0] / math.tan(self.fov[0] / 2), self.image_center[1] / math.tan(self.fov[1] / 2))
 
         # intrinsic camera matrix
         self.camera_info.k = [  self.focal_lengths[0],  0.0,                    self.image_center[0],
@@ -138,13 +137,21 @@ class RGBDCamera(RosPlugin):
                                 0.0, 0.0, 1.0]
 
         # projection matrix
-        self.camera_info.p = [  self.focal_lengths[0],  0.0,                    self.image_center[0],   0.0,
-                                0.0,                    self.focal_lengths[1],  self.image_center[1],   0.0,
-                                0.0,                    0.0,                    0.0,                    1.0]
+        # first row
+        self.camera_info.p[0:3] = self.camera_info.k[0:3]
+        self.camera_info.p[3]   = 0.0
+        # second row
+        self.camera_info.p[4:7] = self.camera_info.k[3:6]
+        self.camera_info.p[7]   = 0.0
+        # third row
+        self.camera_info.p[8:11]= self.camera_info.k[6:9]
+        self.camera_info.p[11]  = 0.0
 
         self.get_logger().info('RGBD camera plugin initialized, camera parameters:')
         self.get_logger().info('  hfov: {}'.format(self.hfov))
         self.get_logger().info('  vfov: {}'.format(self.vfov))
+        self.get_logger().info('  fx: {}'.format(self.focal_lengths[0]))
+        self.get_logger().info('  fy: {}'.format(self.focal_lengths[1]))
         self.get_logger().info('  near_plane: {}'.format(self.near_plane))
         self.get_logger().info('  far_plane: {}'.format(self.far_plane))
         self.get_logger().info('  resolution: {}x{}'.format(self.image_msg.width, self.image_msg.height))
@@ -214,6 +221,14 @@ class RGBDCamera(RosPlugin):
 
         return depth_img
 
+    def flip_image(self, depth_img, img_width, img_height):
+        for i in range(int(img_height / 2)):
+            upper_row = depth_img[i][0: img_width]
+            tmp = upper_row
+            upper_row = depth_img[img_height - i - 1][0: img_width]
+            depth_img[img_height - i - 1] = tmp
+
+        return depth_img
 
     def compute_camera_target(self, camera_position, camera_orientation):
         """calculates a position 5m in front of the camera
@@ -271,6 +286,7 @@ class RGBDCamera(RosPlugin):
         elif self.image_mode == 'depth':
             frame = self.extract_depth(pybullet_cam_resp)
             frame = self.calc_true_depth(frame, self.near_plane, self.far_plane)
+            frame = np.flip(frame, axis=0)
 
         # fill pixel data array
         self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame, self.image_msg.encoding).data

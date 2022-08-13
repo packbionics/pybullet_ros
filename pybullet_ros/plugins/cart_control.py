@@ -4,8 +4,7 @@
 position, velocity and effort control for the cart on cartpole
 """
 
-from rclpy.node import Node
-from pybullet_ros.plugins.control import Control, PveControl
+from pybullet_ros.plugins.control import Control
 
 
 class CartControl(Control):

@@ -14,17 +14,12 @@ import rclpy
 import numpy as np
 from geometry_msgs.msg import Twist, Vector3, Vector3Stamped
 from rclpy.duration import Duration
-from rclpy.node import Node
 
 from pybullet_ros.plugins.ros_plugin import RosPlugin
 
 class CmdVelCtrl(RosPlugin):
     def __init__(self, pybullet, robot, **kargs):
         super().__init__('pybullet_ros_cmd_vel', pybullet, robot)
-
-        # define plugin loop
-        self.rate = self.get_parameter('loop_rate').value
-        self.timer = self.create_timer(1.0/self.rate, self.execute)
         
         # subscribe to robot velocity commands
         self.cmd_vel_msg = None

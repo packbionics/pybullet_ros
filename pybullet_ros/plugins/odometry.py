@@ -37,10 +37,6 @@ class SimpleOdometry(RosPlugin):
         """
 
         super().__init__('pybullet_ros_odometry', pybullet, robot, automatically_declare_parameters_from_overrides=True)
-        
-        # define plugin loop
-        self.rate = self.get_parameter('loop_rate').value
-        self.timer = self.create_timer(1.0/self.rate, self.execute)
 
         # register this node as a /odom publisher
         self.pub_odometry = self.create_publisher(Odometry, 'odom', 1)

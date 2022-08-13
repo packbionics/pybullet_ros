@@ -9,46 +9,47 @@ import math
 
 import numpy as np
 import rclpy
-from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 
+from pybullet_ros.plugins.ros_plugin import RosPlugin
 
-class laserScanner:
-    def __init__(self, node, pybullet, robot, **kargs):
+class LaserScanner(RosPlugin):
+    def __init__(self, pybullet, robot, **kargs):
+        super().__init__('laser_scanner', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+
         # get "import pybullet as pb" and store in self.pb
-        self.node = node
         self.pb = pybullet
         # get robot from parent class
         self.robot = robot
         # laser params
-        laser_frame_id = self.node.declare_parameter('laser/frame_id', None).value # laser reference frame, has to be an existing link
+        laser_frame_id = self.get_parameter('laser/frame_id').value # laser reference frame, has to be an existing link
         if not laser_frame_id:
-            self.node.get_logger().error('required parameter laser_frame_id not set, will exit now')
+            self.get_logger().error('required parameter laser_frame_id not set, will exit now')
             rclpy.shutdown()
             return
         # get pybullet laser link id from its name
         link_names_to_ids_dic = kargs['link_ids']
         if not laser_frame_id in link_names_to_ids_dic:
-            self.node.get_logger().error('laser reference frame "{}" not found in URDF model, cannot continue'.format(laser_frame_id))
-            self.node.get_logger().error('Available frames are: {}'.format(link_names_to_ids_dic))
+            self.get_logger().error('laser reference frame "{}" not found in URDF model, cannot continue'.format(laser_frame_id))
+            self.get_logger().error('Available frames are: {}'.format(link_names_to_ids_dic))
             rclpy.shutdown()
             return
         self.pb_laser_link_id = link_names_to_ids_dic[laser_frame_id]
         # create laser msg placeholder for publication
         self.laser_msg = LaserScan()
         # laser field of view
-        angle_min = self.node.declare_parameter('laser/angle_min', -1.5707963).value
-        angle_max = self.node.declare_parameter('laser/angle_max', 1.5707963).value
+        angle_min = self.get_parameter('laser/angle_min').value
+        angle_max = self.get_parameter('laser/angle_max').value
         assert(angle_max > angle_min)
-        self.numRays = self.node.declare_parameter('laser/num_beams', 50).value # should be 512 beams but simulation becomes slow
-        self.laser_msg.range_min = self.node.declare_parameter('laser/range_min', 0.03).value
-        self.laser_msg.range_max = self.node.declare_parameter('laser/range_max', 5.6).value
-        self.beam_visualisation = self.node.declare_parameter('laser/beam_visualisation', False).value
+        self.numRays = self.get_parameter('laser/num_beams').value # should be 512 beams but simulation becomes slow
+        self.laser_msg.range_min = self.get_parameter('laser/range_min').value
+        self.laser_msg.range_max = self.get_parameter('laser/range_max').value
+        self.beam_visualisation = self.get_parameter('laser/beam_visualisation').value
         self.laser_msg.angle_min = angle_min
         self.laser_msg.angle_max = angle_max
         self.laser_msg.angle_increment = (angle_max - angle_min) / self.numRays
         # register this node in the network as a publisher in /scan topic
-        self.pub_laser_scanner = self.node.create_publisher(LaserScan, 'scan', 1)
+        self.pub_laser_scanner = self.create_publisher(LaserScan, 'scan', 1)
         self.laser_msg.header.frame_id = laser_frame_id
         self.laser_msg.time_increment = 0.01 # ?
         self.laser_msg.scan_time = 0.1 # 10 hz
@@ -118,6 +119,6 @@ class laserScanner:
             # compute laser ranges from hitFraction -> results[i][2]
             self.laser_msg.ranges.append(results[i][2] * self.laser_msg.range_max)
         # update laser time stamp with current time
-        self.laser_msg.header.stamp = self.node.get_clock().now().to_msg()
+        self.laser_msg.header.stamp = self.get_clock().now().to_msg()
         # publish scan
         self.pub_laser_scanner.publish(self.laser_msg)
