@@ -61,11 +61,15 @@ class RGBDCamera(RosPlugin):
         self.camera_pose_msg = PoseStamped()
         self.camera_position = Point()
         self.camera_orientation = Quaternion()
+        self.rgb_img_msg = Image()
         self.depth_img_msg = Image()
         
         self.image_mode = self.get_parameter('image_mode').value
         assert self.image_mode in ['rgb', 'rgbd', 'depth', 'segmentation']
         # get RGBD camera parameters from ROS param server
+        self.rgb_img_msg.width = self.get_parameter('rgbd_camera/resolution/width').value
+        self.rgb_img_msg.height = self.get_parameter('rgbd_camera/resolution/height').value
+
         self.depth_img_msg.width = self.get_parameter('rgbd_camera/resolution/width').value
         self.depth_img_msg.height = self.get_parameter('rgbd_camera/resolution/height').value
         assert(self.depth_img_msg.width > 5)
@@ -83,11 +87,17 @@ class RGBDCamera(RosPlugin):
             rclpy.shutdown()
             return
         self.pb_camera_link_id = link_names_to_ids_dic[cam_frame_id]
+        self.rgb_img_msg.header.frame_id = self.get_parameter('rgbd_camera/pc2_frame_id').value
         self.depth_img_msg.header.frame_id = self.get_parameter('rgbd_camera/pc2_frame_id').value
         # create publishers
         self.pub_camera_state = self.create_publisher(PoseStamped, 'camera/state', 2)
-        self.pub_image = self.create_publisher(Image, 'camera/depth/image_raw', rclpy.qos.qos_profile_sensor_data)
-        self.pub_camera_info = self.create_publisher(CameraInfo, 'camera/info', rclpy.qos.qos_profile_sensor_data)
+        self.pub_rgb_img = self.create_publisher(Image, 'camera/image_raw', rclpy.qos.qos_profile_system_default)
+        self.pub_depth_img = self.create_publisher(Image, 'camera/depth/image_raw', rclpy.qos.qos_profile_system_default)
+        self.pub_camera_info = self.create_publisher(CameraInfo, 'camera/info', rclpy.qos.qos_profile_system_default)
+
+        self.rgb_img_msg.encoding = 'rgb8'
+        self.rgb_img_msg.is_bigendian = self.get_parameter('rgbd_camera/resolution/is_bigendian').value
+        self.rgb_img_msg.step = self.rgb_img_msg.width * 3
 
         self.depth_img_msg.encoding = self.get_parameter('rgbd_camera/resolution/encoding').value
         self.depth_img_msg.is_bigendian = self.get_parameter('rgbd_camera/resolution/is_bigendian').value
@@ -280,19 +290,22 @@ class RGBDCamera(RosPlugin):
                                                     renderer=self.pb.ER_BULLET_HARDWARE_OPENGL
                                                 )
         # frame extraction function from pybullet
-        if self.image_mode == 'rgb8':
-            frame = self.extract_frame(pybullet_cam_resp)
-        elif self.image_mode == 'depth':
-            frame = self.extract_depth(pybullet_cam_resp)
-            frame = self.calc_true_depth(frame, self.near_plane, self.far_plane)
-            frame = np.flip(frame, axis=0)
+        rgb_frame = self.extract_frame(pybullet_cam_resp)
+        rgb_frame = np.flip(rgb_frame, axis=0)
+            
+        depth_frame = self.extract_depth(pybullet_cam_resp)
+        depth_frame = self.calc_true_depth(depth_frame, self.near_plane, self.far_plane)
+        depth_frame = np.flip(depth_frame, axis=0)
 
         # fill pixel data array
-        self.depth_img_msg.data = self.image_bridge.cv2_to_imgmsg(frame, self.depth_img_msg.encoding).data
+        self.rgb_img_msg.data = self.image_bridge.cv2_to_imgmsg(rgb_frame).data
+        self.depth_img_msg.data = self.image_bridge.cv2_to_imgmsg(depth_frame, self.depth_img_msg.encoding).data
         # update msg time stamp
+        self.rgb_img_msg.header.stamp = self.get_clock().now().to_msg()
         self.depth_img_msg.header.stamp = self.get_clock().now().to_msg()
         self.camera_info.header.stamp = self.depth_img_msg.header.stamp
         # publish camera image to ROS network
         self.pub_camera_state.publish(self.camera_pose_msg)
-        self.pub_image.publish(self.depth_img_msg)
+        self.pub_rgb_img.publish(self.rgb_img_msg)
+        self.pub_depth_img.publish(self.depth_img_msg)
         self.pub_camera_info.publish(self.camera_info)
