@@ -5,13 +5,12 @@ RGBD camera sensor simulation for pybullet_ros base on pybullet.getCameraImage()
 """
 
 import math
-from turtle import width
 
 import numpy as np
 import rclpy
 import rclpy.qos
+
 from cv_bridge import CvBridge
-from rclpy.node import Node
 
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
@@ -62,15 +61,15 @@ class RGBDCamera(RosPlugin):
         self.camera_pose_msg = PoseStamped()
         self.camera_position = Point()
         self.camera_orientation = Quaternion()
-        self.image_msg = Image()
+        self.depth_img_msg = Image()
         
         self.image_mode = self.get_parameter('image_mode').value
         assert self.image_mode in ['rgb', 'rgbd', 'depth', 'segmentation']
         # get RGBD camera parameters from ROS param server
-        self.image_msg.width = self.get_parameter('rgbd_camera/resolution/width').value
-        self.image_msg.height = self.get_parameter('rgbd_camera/resolution/height').value
-        assert(self.image_msg.width > 5)
-        assert(self.image_msg.height > 5)
+        self.depth_img_msg.width = self.get_parameter('rgbd_camera/resolution/width').value
+        self.depth_img_msg.height = self.get_parameter('rgbd_camera/resolution/height').value
+        assert(self.depth_img_msg.width > 5)
+        assert(self.depth_img_msg.height > 5)
         cam_frame_id = self.get_parameter('rgbd_camera/frame_id').value
         if not cam_frame_id:
             self.get_logger().error('Required parameter rgbd_camera/frame_id not set, will exit now...')
@@ -84,16 +83,16 @@ class RGBDCamera(RosPlugin):
             rclpy.shutdown()
             return
         self.pb_camera_link_id = link_names_to_ids_dic[cam_frame_id]
-        self.image_msg.header.frame_id = cam_frame_id
+        self.depth_img_msg.header.frame_id = self.get_parameter('rgbd_camera/pc2_frame_id').value
         # create publishers
         self.pub_camera_state = self.create_publisher(PoseStamped, 'camera/state', 2)
         self.pub_image = self.create_publisher(Image, 'camera/depth/image_raw', rclpy.qos.qos_profile_sensor_data)
         self.pub_camera_info = self.create_publisher(CameraInfo, 'camera/info', rclpy.qos.qos_profile_sensor_data)
 
-        self.image_msg.encoding = self.get_parameter('rgbd_camera/resolution/encoding').value
-        self.image_msg.is_bigendian = self.get_parameter('rgbd_camera/resolution/is_bigendian').value
-        self.image_msg.step = self.get_parameter('rgbd_camera/resolution/step').value
-        assert self.image_msg.encoding in ['32FC1'] + ['mono8', 'mono16', 'bgr8', 'rgb8', 'bgra8', 'rgba8', 'passthrough']
+        self.depth_img_msg.encoding = self.get_parameter('rgbd_camera/resolution/encoding').value
+        self.depth_img_msg.is_bigendian = self.get_parameter('rgbd_camera/resolution/is_bigendian').value
+        self.depth_img_msg.step = self.get_parameter('rgbd_camera/resolution/step').value
+        assert self.depth_img_msg.encoding in ['32FC1'] + ['mono8', 'mono16', 'bgr8', 'rgb8', 'bgra8', 'rgba8', 'passthrough']
         
         # projection matrix
         self.hfov = self.get_parameter('rgbd_camera/hfov').value
@@ -109,11 +108,11 @@ class RGBDCamera(RosPlugin):
         self.camera_info = CameraInfo()
 
         # used by ROS to handle ROS msgs
-        self.camera_info.header = self.image_msg.header
+        self.camera_info.header = self.depth_img_msg.header
 
         # resolution of camera
-        self.camera_info.height = self.image_msg.width
-        self.camera_info.width = self.image_msg.height
+        self.camera_info.height = self.depth_img_msg.width
+        self.camera_info.width = self.depth_img_msg.height
 
         # distortion model
         self.camera_info.distortion_model = 'plumb_bob'
@@ -123,7 +122,7 @@ class RGBDCamera(RosPlugin):
 
         self.fov = (math.radians(self.hfov), math.radians(self.vfov))
 
-        self.image_center = (self.image_msg.width / 2, self.image_msg.height / 2)
+        self.image_center = (self.depth_img_msg.width / 2, self.depth_img_msg.height / 2)
         self.focal_lengths = (self.image_center[0] / math.tan(self.fov[0] / 2), self.image_center[1] / math.tan(self.fov[1] / 2))
 
         # intrinsic camera matrix
@@ -154,8 +153,8 @@ class RGBDCamera(RosPlugin):
         self.get_logger().info('  fy: {}'.format(self.focal_lengths[1]))
         self.get_logger().info('  near_plane: {}'.format(self.near_plane))
         self.get_logger().info('  far_plane: {}'.format(self.far_plane))
-        self.get_logger().info('  resolution: {}x{}'.format(self.image_msg.width, self.image_msg.height))
-        self.get_logger().info('  frame_id: {}'.format(self.image_msg.header.frame_id))
+        self.get_logger().info('  resolution: {}x{}'.format(self.depth_img_msg.width, self.depth_img_msg.height))
+        self.get_logger().info('  frame_id: {}'.format(self.depth_img_msg.header.frame_id))
 
     def compute_projection_matrix(self):
         """calculated a 4x4 project matrix based on intrinsic camera parameters
@@ -202,10 +201,10 @@ class RGBDCamera(RosPlugin):
         # Extract depth buffer
         depth_buffer = np.reshape(camera_image[3], (camera_image[1], camera_image[0]))
 
-        if self.image_msg.encoding == 'mono8':
+        if self.depth_img_msg.encoding == 'mono8':
             # Convert from floating-point to 8-bit format and return result
             return (depth_buffer*255).astype(np.uint8)
-        elif self.image_msg.encoding == 'mono16':
+        elif self.depth_img_msg.encoding == 'mono16':
             # Convert from floating-point to 16-bit format and return result
             return (depth_buffer*(255**2)).astype(np.uint16)
         else:
@@ -274,8 +273,8 @@ class RGBDCamera(RosPlugin):
         self.camera_pose_msg.pose.orientation = self.camera_orientation
 
         # get camera image from pybullet
-        pybullet_cam_resp = self.pb.getCameraImage(self.image_msg.width,
-                                                    self.image_msg.height,
+        pybullet_cam_resp = self.pb.getCameraImage(self.depth_img_msg.width,
+                                                    self.depth_img_msg.height,
                                                     view_matrix,
                                                     self.projection_matrix,
                                                     renderer=self.pb.ER_BULLET_HARDWARE_OPENGL
@@ -289,11 +288,11 @@ class RGBDCamera(RosPlugin):
             frame = np.flip(frame, axis=0)
 
         # fill pixel data array
-        self.image_msg.data = self.image_bridge.cv2_to_imgmsg(frame, self.image_msg.encoding).data
+        self.depth_img_msg.data = self.image_bridge.cv2_to_imgmsg(frame, self.depth_img_msg.encoding).data
         # update msg time stamp
-        self.image_msg.header.stamp = self.get_clock().now().to_msg()
-        self.camera_info.header.stamp = self.image_msg.header.stamp
+        self.depth_img_msg.header.stamp = self.get_clock().now().to_msg()
+        self.camera_info.header.stamp = self.depth_img_msg.header.stamp
         # publish camera image to ROS network
         self.pub_camera_state.publish(self.camera_pose_msg)
-        self.pub_image.publish(self.image_msg)
+        self.pub_image.publish(self.depth_img_msg)
         self.pub_camera_info.publish(self.camera_info)
