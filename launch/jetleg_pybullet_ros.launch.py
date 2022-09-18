@@ -1,5 +1,4 @@
 import os
-import yaml
 
 from ament_index_python import get_package_share_directory
 from launch_ros.actions import Node
@@ -8,34 +7,6 @@ from launch import LaunchDescription
 from launch.actions.declare_launch_argument import DeclareLaunchArgument
 from launch.substitutions import Command, TextSubstitution, PathJoinSubstitution
 from launch.substitutions.launch_configuration import LaunchConfiguration
-
-def load_from_yaml(path):
-        # open file for reading
-        file = open(path, "r")
-        yaml_contents = {}
-
-        try:
-            # load contents into python dictionary
-            yaml_contents = yaml.safe_load(file)
-        except yaml.YAMLError as exc:
-            print(exc)
-        # return yaml contents as dictionary
-        return yaml_contents
-
-def get_robot_path(path):
-    package_key = "Package"         # name of package containing URDF or XACRO
-    model_path_key = "RelPath"      # path of URDF or XACRO relative to package directory
-
-    yaml_contents = load_from_yaml(path)
-
-    first_robot_yaml_description = list(yaml_contents.values())[0]
-    first_robot_package_name = first_robot_yaml_description[package_key]
-
-    first_robot_package_path = get_package_share_directory(first_robot_package_name)
-    first_robot_rel_path = first_robot_yaml_description[model_path_key]
-
-    first_robot_abs_path = os.path.join(first_robot_package_path, first_robot_rel_path)
-    return first_robot_abs_path
 
 def generate_launch_description():
 
@@ -57,10 +28,11 @@ def generate_launch_description():
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
 
     # path of file describing robots to load
-    model_config_file_path = os.path.join(pybullet_ros_dir, 'config/jetleg_pybullet_ros_model_config.yaml')
+    default_model_config_file_path = os.path.join(pybullet_ros_dir, 'config/model/jetleg_pybullet_ros_model_config.yaml')
+    default_model_path = os.path.join(get_package_share_directory('jetleg_description'), 'urdf/testrig_vision.xacro')
 
     # config file defining pybullet parameters
-    default_config_file_path = os.path.join(pybullet_ros_dir, "config/jetleg_params.yaml")
+    default_config_file_path = os.path.join(pybullet_ros_dir, "config/pybullet/jetleg_params.yaml")
     
     config_file_arg = DeclareLaunchArgument(
         "config_file", 
@@ -71,7 +43,7 @@ def generate_launch_description():
     model_config_file_arg = DeclareLaunchArgument(
         "model_config_file",
         default_value=TextSubstitution(
-            text=model_config_file_path
+            text=default_model_config_file_path
         )
     )
     plugin_import_prefix_arg = DeclareLaunchArgument(
@@ -128,7 +100,7 @@ def generate_launch_description():
     )
     model_arg = DeclareLaunchArgument(
         "model",
-        default_value=get_robot_path(model_config_file_path)
+        default_value=default_model_path
     )
 
     pybullet_ros_parameters=[

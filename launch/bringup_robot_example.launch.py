@@ -11,14 +11,14 @@ def generate_launch_description():
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
     jetleg_pybullet_ros_path = [os.path.join(pybullet_ros_dir, 'launch'), '/jetleg_pybullet_ros.launch.py']
 
-    bringup_robot_example_model_info = os.path.join(pybullet_ros_dir, 'config/bringup_robot_example_model_config.yaml')
+    bringup_robot_example_model_info = os.path.join(pybullet_ros_dir, 'config/model/bringup_robot_example_model_config.yaml')
     bringup_robot_xacro_path = os.path.join(pybullet_ros_dir, 'common/test/urdf/r2d2_robot/r2d2.urdf.xacro')
 
-    redefined_launch_arguments = {
+    launch_arguments = {
         'model_config_file': bringup_robot_example_model_info,
         'model': bringup_robot_xacro_path
     }
 
-    jetleg_pybullet_ros = IncludeLaunchDescription(PythonLaunchDescriptionSource(jetleg_pybullet_ros_path), launch_arguments=redefined_launch_arguments.items())
+    jetleg_pybullet_ros = IncludeLaunchDescription(PythonLaunchDescriptionSource(jetleg_pybullet_ros_path), launch_arguments=launch_arguments.items())
 
     return LaunchDescription([jetleg_pybullet_ros])

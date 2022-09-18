@@ -13,14 +13,14 @@ def generate_launch_description():
 
     jetleg_pybullet_ros_path = [os.path.join(pybullet_ros_dir, 'launch'), '/jetleg_pybullet_ros.launch.py']
 
-    cartpole_pybullet_ros_model_info = os.path.join(pybullet_ros_dir, 'config/cartpole_pybullet_ros_model_config.yaml')
+    cartpole_pybullet_ros_model_info = os.path.join(pybullet_ros_dir, 'config/model/cartpole_pybullet_ros_model_config.yaml')
     cartpole_urdf_path = os.path.join(cartpole_description_dir, 'robot/urdf/robot.urdf')
 
-    redefined_launch_arguments = {
+    launch_arguments = {
         'model_config_file': cartpole_pybullet_ros_model_info,
         'model': cartpole_urdf_path
     }
 
-    jetleg_pybullet_ros = IncludeLaunchDescription(PythonLaunchDescriptionSource(jetleg_pybullet_ros_path), launch_arguments=redefined_launch_arguments.items())
+    jetleg_pybullet_ros = IncludeLaunchDescription(PythonLaunchDescriptionSource(jetleg_pybullet_ros_path), launch_arguments=launch_arguments.items())
 
     return LaunchDescription([jetleg_pybullet_ros])

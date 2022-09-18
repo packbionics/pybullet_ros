@@ -86,8 +86,8 @@ class pyBulletRosWrapper(Node):
 
         try:
             self.executor.spin()
-        #except Exception as e:
-        #    self.get_logger().error(traceback.format_exc())
+        except Exception as e:
+            self.get_logger().error(str(repr(e)))
         finally:
             self.executor.shutdown()
             self.destroy_node()

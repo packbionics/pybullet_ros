@@ -4,9 +4,7 @@
 TODO: briefly describe your plugin here
 """
 
-import rclpy
 from rclpy.node import Node
-
 
 class RosPlugin(Node):
     def __init__(self, name, pybullet, robot, **kargs):

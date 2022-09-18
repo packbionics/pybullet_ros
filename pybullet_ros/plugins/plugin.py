@@ -4,10 +4,6 @@
 TODO: briefly describe your plugin here
 """
 
-import rclpy
-from rclpy.node import Node
-
-
 class Plugin:
     def __init__(self, node, pybullet, robot, **kargs):
         self.node = node
