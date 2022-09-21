@@ -10,6 +10,7 @@ import numpy as np
 import rclpy
 import rclpy.qos
 
+import cv2
 from cv_bridge import CvBridge
 
 from sensor_msgs.msg import Image
