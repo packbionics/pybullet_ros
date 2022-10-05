@@ -15,7 +15,7 @@ def generate_launch_description():
 
     config_file_path = os.path.join(pybullet_ros_dir, "config/pybullet/jetleg_params.yaml")
     model_config_file_path = os.path.join(pybullet_ros_dir, "config/model/jetleg_single_leg.yaml")
-    testrig_vision_xacro_path = os.path.join(jetleg_description_dir, 'urdf/jetleg_single_leg.xacro')
+    testrig_vision_xacro_path = os.path.join(jetleg_description_dir, 'urdf/jetleg_single.xacro')
 
     launch_arguments = {
         'config_file': config_file_path,
