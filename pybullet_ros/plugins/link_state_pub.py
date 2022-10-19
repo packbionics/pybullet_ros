@@ -3,7 +3,9 @@
 """
 query robot state and publish position, velocity and effort values to /link_states
 """
-from geometry_msgs.msg import PoseStamped
+from jetleg_interfaces.msg import LinkState
+
+from geometry_msgs.msg import Point, Quaternion
 
 from pybullet_ros.plugins.ros_plugin import RosPlugin
 
@@ -34,30 +36,36 @@ class LinkStatePub(RosPlugin):
         # retrieve dictionary of link names to link ids
         self.link_names_to_ids_dic = kargs['link_ids']
         # register this node in the network as a publisher in /link_states topic
-        self.pub_link_states = self.create_publisher(PoseStamped, 'link_states', rclpy.qos.qos_profile_system_default)
+        self.pub_link_states = self.create_publisher(LinkState, 'link_states', rclpy.qos.qos_profile_system_default)
 
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
+        link_msg = LinkState()
+
         # get link states
         for link_name in self.link_names_to_ids_dic:
             # setup msg placeholder
-            link_msg = PoseStamped()
+            point = Point()
+            orientation = Quaternion()
 
             # get joint state from pybullet
             link_state = self.pb.getLinkState(self.robot, self.link_names_to_ids_dic[link_name])
 
             # fill msg header
-            link_msg.header.frame_id = link_name
             link_msg.header.stamp = self.get_clock().now().to_msg()
             # fill msg pose
-            link_msg.pose.position.x = link_state[0][0]
-            link_msg.pose.position.y = link_state[0][1]
-            link_msg.pose.position.z = link_state[0][2]
+            point.x = link_state[0][0]
+            point.y = link_state[0][1]
+            point.z = link_state[0][2]
 
-            link_msg.pose.orientation.x = link_state[1][0]
-            link_msg.pose.orientation.y = link_state[1][1]
-            link_msg.pose.orientation.z = link_state[1][2]
-            link_msg.pose.orientation.w = link_state[1][3]
+            orientation.x = link_state[1][0]
+            orientation.y = link_state[1][1]
+            orientation.z = link_state[1][2]
+            orientation.w = link_state[1][3]
+
+            link_msg.name.append(link_name)
+            link_msg.position.append(point)
+            link_msg.orientation.append(orientation)
     
-            # publish joint states to ROS
-            self.pub_link_states.publish(link_msg)
+        # publish joint states to ROS
+        self.pub_link_states.publish(link_msg)
