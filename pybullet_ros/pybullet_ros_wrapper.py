@@ -272,14 +272,15 @@ class pyBulletRosWrapper(Node):
             self.plugins.append(obj)
             self.executor.add_node(obj)
 
-    def handle_reset_simulation(self, req):
+    def handle_reset_simulation(self, req, resp):
         """Callback to handle the service offered by this node to reset the simulation
 
         Args:
-            req (Empty): an empty data structure
+            req (Empty.Request): an empty data structure repreenting request by the client
+            resp (Emtpy.Response): an empty data structure representing response to the client
 
         Returns:
-            list: empty list
+            response: n empty data structure representing response to the client
         """
 
         self.get_logger().info('resetting simulation now')
@@ -287,11 +288,13 @@ class pyBulletRosWrapper(Node):
         self.pause_simulation = True
         # remove all objects from the world and reset the world to initial conditions
         self.pb.resetSimulation()
-        # load URDF model again, set gravity and floor
+        # set gravity and floor
+        self.urdf_flags = self.init_environment()
+        # load URDF model again
         self.init_pybullet_models()
         # resume simulation control cycle now that a new robot is in place
         self.pause_simulation = False
-        return []
+        return resp
 
     def handle_pause_physics(self, req):
         """pause simulation, raise flag to prevent pybullet to execute self.pb.stepSimulation()
