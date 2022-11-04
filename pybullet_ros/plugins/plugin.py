@@ -5,7 +5,7 @@ TODO: briefly describe your plugin here
 """
 
 class Plugin:
-    def __init__(self, node, pybullet, robot, **kargs):
+    def __init__(self, wrapper, node, pybullet, robot, **kargs):
         self.node = node
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet

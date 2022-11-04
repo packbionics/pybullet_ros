@@ -21,7 +21,7 @@ class JointStatePub(RosPlugin):
         pub_joint_states (Publisher): publisher for broadcasting joint states
     """
 
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, wrapper, pybullet, robot, **kargs):
         """publishes the joint states of the robot
 
         Args:
@@ -29,7 +29,7 @@ class JointStatePub(RosPlugin):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_joint_state_pub', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        super().__init__(wrapper, 'pybullet_ros_joint_state_pub', pybullet, robot, automatically_declare_parameters_from_overrides=True)
 
         # get revolute joints names and store them in dictionary
         self.rev_joint_index_name_dic = kargs['rev_joints']

@@ -23,7 +23,7 @@ class LinkStatePub(RosPlugin):
         pub_link_states (Publisher): publisher for broadcasting joint states
     """
 
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, wrapper, pybullet, robot, **kargs):
         """publishes the joint states of the robot
 
         Args:
@@ -31,7 +31,7 @@ class LinkStatePub(RosPlugin):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_link_state_pub', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        super().__init__(wrapper, 'pybullet_ros_link_state_pub', pybullet, robot, automatically_declare_parameters_from_overrides=True)
 
         # retrieve dictionary of link names to link ids
         self.link_names_to_ids_dic = kargs['link_ids']

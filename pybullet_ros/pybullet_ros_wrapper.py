@@ -79,6 +79,9 @@ class pyBulletRosWrapper(Node):
         # load plugins
         self.init_plugins(plugins)
 
+        # track number of timesteps per simulation
+        self.sim_time_steps = 0
+
         self.get_logger().info('pybullet ROS wrapper initialized')
         self.timer = self.create_timer(1.0 / self.loop_rate, self.wrapper_callback)
 
@@ -98,6 +101,7 @@ class pyBulletRosWrapper(Node):
         """loop for running physcs simulation"""
 
         self.pb.stepSimulation()
+        self.sim_time_steps += 1
         if not self.connected_to_physics_server:
             self.pb.disconnect()
 
@@ -262,7 +266,7 @@ class pyBulletRosWrapper(Node):
             params_ = {'module': module_, 'class': class_}
             self.get_logger().info('loading plugin: {} class from {}'.format(class_, module_))
             # create object of the imported file class
-            obj = getattr(importlib.import_module(module_), class_)(self.pb, self.robot,
+            obj = getattr(importlib.import_module(module_), class_)(self, self.pb, self.robot,
                           rev_joints=self.rev_joint_index_name_dic,
                           prism_joints=self.prismatic_joint_index_name_dic,
                           fixed_joints=self.fixed_joint_index_name_dic,
@@ -280,7 +284,7 @@ class pyBulletRosWrapper(Node):
             resp (Emtpy.Response): an empty data structure representing response to the client
 
         Returns:
-            response: n empty data structure representing response to the client
+            response: an empty data structure representing response to the client
         """
 
         self.get_logger().info('resetting simulation now')
@@ -288,6 +292,8 @@ class pyBulletRosWrapper(Node):
         self.pause_simulation = True
         # remove all objects from the world and reset the world to initial conditions
         self.pb.resetSimulation()
+        # reset simulation timestep tracker
+        self.sim_time_steps = 0
         # set gravity and floor
         self.urdf_flags = self.init_environment()
         # load URDF model again

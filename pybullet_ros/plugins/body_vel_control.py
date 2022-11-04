@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-Subscribe to cmd_vel and apply desired speed to the robot, without any noise
-
-tf explained:
-pybullet requires that velocity of the robot is set w.r.t. world reference frame
-however cmd_vel convention required velocity to be expressed w.r.t. robot base frame
-therefore a transformation is needed.
-"""
-
 import math
 import rclpy
 import numpy as np
@@ -18,8 +9,22 @@ from rclpy.duration import Duration
 from pybullet_ros.plugins.ros_plugin import RosPlugin
 
 class CmdVelCtrl(RosPlugin):
-    def __init__(self, pybullet, robot, **kargs):
-        super().__init__('pybullet_ros_cmd_vel', pybullet, robot)
+    """
+    Subscribe to cmd_vel and apply desired speed to the robot, without any noise
+
+    tf explained:
+    pybullet requires that velocity of the robot is set w.r.t. world reference frame
+    however cmd_vel convention required velocity to be expressed w.r.t. robot base frame
+    therefore a transformation is needed.
+
+    Attributes:
+        cmd_vel_msg (): command msg
+        received_cmd_vel_time (): time of received command
+        subscription(): subscription to Twist topic
+    """
+
+    def __init__(self, wrapper, pybullet, robot, **kargs):
+        super().__init__('pybullet_ros_cmd_vel', wrapper, pybullet, robot)
         
         # subscribe to robot velocity commands
         self.cmd_vel_msg = None

@@ -29,7 +29,7 @@ class Control(RosPlugin):
         joint_indices (list): list of joint indices
     """
 
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, wrapper, pybullet, robot, **kargs):
         """constructor
 
         Args:
@@ -37,7 +37,7 @@ class Control(RosPlugin):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_control', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        super().__init__(wrapper, 'pybullet_ros_control', pybullet, robot, automatically_declare_parameters_from_overrides=True)
 
         # lists to recall last received command (useful when controlling multiple joints)
         self.position_joint_commands = []

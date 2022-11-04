@@ -28,7 +28,7 @@ class SimpleOdometry(RosPlugin):
         br (TransformBroadcaster): broadcasts the transforms of the robot link
     """
 
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, wrapper, pybullet, robot, **kargs):
         """Handles odometry for main robot
 
         Args:
@@ -36,7 +36,7 @@ class SimpleOdometry(RosPlugin):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_odometry', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        super().__init__(wrapper, 'pybullet_ros_odometry', pybullet, robot, automatically_declare_parameters_from_overrides=True)
 
         # register this node as a /odom publisher
         self.pub_odometry = self.create_publisher(Odometry, 'odom', 1)

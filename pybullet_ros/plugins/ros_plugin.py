@@ -7,7 +7,10 @@ TODO: briefly describe your plugin here
 from rclpy.node import Node
 
 class RosPlugin(Node):
-    def __init__(self, name, pybullet, robot, **kargs):
+    def __init__(self, wrapper, name, pybullet, robot, **kargs):
+        # reference to pybullet wrapper
+        self.wrapper = wrapper
+        # node name
         self.name = name
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet

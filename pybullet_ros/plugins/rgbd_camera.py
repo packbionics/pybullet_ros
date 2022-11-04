@@ -48,7 +48,7 @@ class RGBDCamera(RosPlugin):
         image_bridge (CvBridge): used for converting OpenCV images to ROS 2 Image msg type
     """
 
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, wrapper, pybullet, robot, **kargs):
         """sets up parameters, topics, and services
 
         Args:
@@ -56,7 +56,7 @@ class RGBDCamera(RosPlugin):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_rgbd_camera', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        super().__init__(wrapper, 'pybullet_ros_rgbd_camera', pybullet, robot, automatically_declare_parameters_from_overrides=True)
         
         # create msg placeholders for publication
         self.camera_pose_msg = PoseStamped()
