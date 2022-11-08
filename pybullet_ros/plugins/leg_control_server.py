@@ -1,4 +1,3 @@
-from sympy import false
 import rclpy
 from rclpy.action import ActionServer
 
@@ -6,11 +5,13 @@ from jetleg_interfaces.action import LegAction
 from jetleg_interfaces.msg import LinkState
 
 from std_msgs.msg import Float64
-from std_srvs.srv import Empty
 
 from sensor_msgs.msg import JointState
 
 from pybullet_ros.plugins.ros_plugin import RosPlugin
+
+from pybullet_ros.plugins.joint_state_pub import JointStatePub
+from pybullet_ros.plugins.link_state_pub import LinkStatePub
 
 import numpy as np
 
@@ -22,14 +23,14 @@ class LegControlServer(RosPlugin):
         # Contains current state information
         self.state_dict = {}
 
-        # Initialize JointState subscription to read joint states for action feedback and result
-        self.joint_state_sub = self.create_subscription(JointState, 'joint_states', self.joint_state_callback, rclpy.qos.qos_profile_system_default)
+        # # Initialize JointState subscription to read joint states for action feedback and result
+        # self.joint_state_sub = self.create_subscription(JointState, 'joint_states', self.joint_state_callback, rclpy.qos.qos_profile_system_default)
 
-        # Initialize LinkState subscription to read Poselink states for action feedback and result
-        self.link_state_sub = self.create_subscription(LinkState, 'link_states', self.link_state_callback, rclpy.qos.qos_profile_system_default)
+        # # Initialize LinkState subscription to read Poselink states for action feedback and result
+        # self.link_state_sub = self.create_subscription(LinkState, 'link_states', self.link_state_callback, rclpy.qos.qos_profile_system_default)
 
-        # Initialize service client to reset simulation after the leg falls down
-        self.reset_sim_client = self.create_client(Empty, 'reset_simulation')
+        self.joint_state_pub = JointStatePub(wrapper, pybullet, robot, **kargs)
+        self.link_state_pub = LinkStatePub(wrapper, pybullet, robot, **kargs)
 
         # Names of topics to control leg joints
         pub_topics = [
@@ -40,6 +41,8 @@ class LegControlServer(RosPlugin):
         # List of publishers for controlling leg joints
         self.joint_controllers = []
 
+        self.current_state = []
+
         # Create publishers for controlling leg joints
         for topic_name in pub_topics:
             self.joint_controllers.append(self.create_publisher(Float64, topic_name, rclpy.qos.qos_profile_system_default))
@@ -48,7 +51,6 @@ class LegControlServer(RosPlugin):
         self.action_server = ActionServer(self, LegAction, 'leg_control', self.execute_callback)
 
     def execute_callback(self, goal_handle):
-        # self.get_logger().info('Executing goal...')
 
         # Execute requested action
         self.perform_action(np.array(goal_handle.request.action))
@@ -80,9 +82,18 @@ class LegControlServer(RosPlugin):
                 self.move_ankle(delta_pos)
             elif idx == 3:
                 self.move_ankle(-delta_pos)
+            elif idx == 4:
+                self.move_knee(delta_pos * 0.1)
+            elif idx == 5:
+                self.move_knee(-delta_pos * 0.1)
+            elif idx == 6:
+                self.move_ankle(delta_pos * 0.1)
+            elif idx == 7:
+                self.move_ankle(-delta_pos * 0.1)
+            elif idx == 8:
+                pass
         except KeyError:
-            self.get_logger().error('Invalid name for joint used for state_dict access')
-            exit(1)
+            raise KeyError('Invalid name for joint used for state_dict access')
 
     def move_knee(self, delta_pos):
         current_knee_angle = self.state_dict['knee_joint'][0]
@@ -103,6 +114,10 @@ class LegControlServer(RosPlugin):
         self.joint_controllers[0].publish(signal)
 
     def retrieve_state(self):
+        # Update latest joint and link states
+        self.joint_state_callback(self.joint_state_pub.get_joint_state())
+        self.link_state_callback(self.link_state_pub.get_link_state())
+
         current_state = []
         for key in self.state_dict:
             for i in self.state_dict[key]:
@@ -128,12 +143,6 @@ class LegControlServer(RosPlugin):
             link_state = link_pos + link_orientation
             self.state_dict[msg.name[i]] = link_state
 
-    def reset_sim(self):
-        req = Empty()
-        
-        self.future = self.cli.call_async(req)
-        rclpy.spin_until_future_complete(self, self.future)
-
     def has_leg_fallen(self):
         """
         Checks if the leg has fallen down in simulation
@@ -141,9 +150,33 @@ class LegControlServer(RosPlugin):
             bool: true if the leg is in a fallen state or false otherwise
         """
 
-        
+        THIGH_HORIZONTAL_THRESHOLD = 0.4
+
+        if self.state_dict['thigh'][2] < THIGH_HORIZONTAL_THRESHOLD:
+            return True
 
         return False
+
+    def get_joint_state(self):
+        # setup msg placeholder
+        joint_msg = JointState()
+        # get joint states
+        for joint_index in self.joint_index_name_dic:
+
+            # get joint state from pybullet
+            try:
+                joint_state = self.pb.getJointState(self.robot, joint_index)
+            except Exception as ex:
+                raise ConnectionError('An error occurred while trying to access robot joint state. Please ensure robot is fully loaded in the environment.')
+            # fill msg
+            joint_msg.name.append(self.joint_index_name_dic[joint_index])
+            joint_msg.position.append(joint_state[0])
+            joint_msg.velocity.append(joint_state[1])
+            joint_msg.effort.append(joint_state[3]) # applied effort in last sim step
+        # update msg time using ROS time api
+        joint_msg.header.stamp = self.get_clock().now().to_msg()
+
+        return joint_msg
 
     def execute(self):
         pass

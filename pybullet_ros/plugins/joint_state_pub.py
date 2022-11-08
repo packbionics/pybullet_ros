@@ -40,14 +40,17 @@ class JointStatePub(RosPlugin):
         # register this node in the network as a publisher in /joint_states topic
         self.pub_joint_states = self.create_publisher(JointState, 'joint_states', 1)
 
-    def execute(self):
-        """this function gets called from pybullet ros main update loop"""
+    def get_joint_state(self):
         # setup msg placeholder
         joint_msg = JointState()
         # get joint states
         for joint_index in self.joint_index_name_dic:
+
             # get joint state from pybullet
-            joint_state = self.pb.getJointState(self.robot, joint_index)
+            try:
+                joint_state = self.pb.getJointState(self.robot, joint_index)
+            except Exception as ex:
+                raise ConnectionError('An error occurred while trying to access robot joint state. Please ensure robot is fully loaded in the environment.')
             # fill msg
             joint_msg.name.append(self.joint_index_name_dic[joint_index])
             joint_msg.position.append(joint_state[0])
@@ -55,5 +58,20 @@ class JointStatePub(RosPlugin):
             joint_msg.effort.append(joint_state[3]) # applied effort in last sim step
         # update msg time using ROS time api
         joint_msg.header.stamp = self.get_clock().now().to_msg()
+
+        return joint_msg
+
+    def pub_joint_state(self):
+        # Access joint state from PyBullet
+        joint_msg = self.get_joint_state()
         # publish joint states to ROS
         self.pub_joint_states.publish(joint_msg)
+
+    def execute(self):
+        """this function gets called from pybullet ros main update loop"""
+
+        try:
+            if not self.wrapper.pause_simulation:
+                self.pub_joint_state()
+        except ConnectionError as connex:
+            self.get_logger().info(str(connex))

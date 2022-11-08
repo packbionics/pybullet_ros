@@ -7,6 +7,7 @@ import pybullet_data
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
+
 from std_srvs.srv import Empty
 
 from utils import ModelLoader
@@ -280,8 +281,8 @@ class pyBulletRosWrapper(Node):
         """Callback to handle the service offered by this node to reset the simulation
 
         Args:
-            req (Empty.Request): an empty data structure repreenting request by the client
-            resp (Emtpy.Response): an empty data structure representing response to the client
+            req (SetBool.Request): an empty data structure repreenting request by the client
+            resp (SetBool.Response): an empty data structure representing response to the client
 
         Returns:
             response: an empty data structure representing response to the client

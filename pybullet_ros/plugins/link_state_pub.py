@@ -38,8 +38,7 @@ class LinkStatePub(RosPlugin):
         # register this node in the network as a publisher in /link_states topic
         self.pub_link_states = self.create_publisher(LinkState, 'link_states', rclpy.qos.qos_profile_system_default)
 
-    def execute(self):
-        """this function gets called from pybullet ros main update loop"""
+    def get_link_state(self):
         link_msg = LinkState()
 
         # get link states
@@ -49,10 +48,11 @@ class LinkStatePub(RosPlugin):
             orientation = Quaternion()
 
             # get joint state from pybullet
-            link_state = self.pb.getLinkState(self.robot, self.link_names_to_ids_dic[link_name])
+            try:
+                link_state = self.pb.getLinkState(self.robot, self.link_names_to_ids_dic[link_name])
+            except Exception as ex:
+                raise ConnectionError('An error occurred while trying to access link state. Please ensure robot is fully loaded in the environment.')
 
-            # fill msg header
-            link_msg.header.stamp = self.get_clock().now().to_msg()
             # fill msg pose
             point.x = link_state[0][0]
             point.y = link_state[0][1]
@@ -66,6 +66,23 @@ class LinkStatePub(RosPlugin):
             link_msg.name.append(link_name)
             link_msg.position.append(point)
             link_msg.orientation.append(orientation)
-    
+
+        # fill msg header
+        link_msg.header.stamp = self.get_clock().now().to_msg()
+        return link_msg
+
+    def pub_link_state(self):
+        # Access link state from PyBullet
+        link_msg = self.get_link_state()
+
         # publish joint states to ROS
         self.pub_link_states.publish(link_msg)
+    
+    def execute(self):
+        """this function gets called from pybullet ros main update loop"""
+
+        try:
+            if not self.wrapper.pause_simulation:
+                self.pub_link_state()
+        except ConnectionError as connex:
+            self.get_logger().info(str(connex))

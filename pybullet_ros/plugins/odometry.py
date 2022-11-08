@@ -51,35 +51,46 @@ class SimpleOdometry(RosPlugin):
         self.odom_trans.child_frame_id = robot_base_frame_param
         self.br = TransformBroadcaster(self)
 
+    def pub_odom_transform(self):
+                    # set msg timestamp based on current time
+            now = self.get_clock().now().to_msg()
+            self.odom_msg.header.stamp = now
+            self.odom_trans.header.stamp = now
+            # query base pose from pybullet and store in odom msg
+            try:
+                position, orientation = self.pb.getBasePositionAndOrientation(self.robot)
+            except Exception as ex:
+                raise ConnectionError('An error occurred while trying to access position and orientation of robot. Please ensure the robot is fully loaded in the environment.')
+
+            [self.odom_trans.transform.translation.x,\
+            self.odom_trans.transform.translation.y,\
+            self.odom_trans.transform.translation.z] = position
+            [self.odom_msg.pose.pose.position.x,\
+            self.odom_msg.pose.pose.position.y,\
+            self.odom_msg.pose.pose.position.z] = position
+            [self.odom_trans.transform.rotation.x,\
+            self.odom_trans.transform.rotation.y,\
+            self.odom_trans.transform.rotation.z,\
+            self.odom_trans.transform.rotation.w] = orientation
+            [self.odom_msg.pose.pose.orientation.x,\
+            self.odom_msg.pose.pose.orientation.y,\
+            self.odom_msg.pose.pose.orientation.z,\
+            self.odom_msg.pose.pose.orientation.w] = orientation
+            # query base velocity from pybullet and store it in msg
+            [self.odom_msg.twist.twist.linear.x,\
+            self.odom_msg.twist.twist.linear.y,\
+            self.odom_msg.twist.twist.linear.z],\
+            [self.odom_msg.twist.twist.angular.x,\
+            self.odom_msg.twist.twist.angular.y,\
+            self.odom_msg.twist.twist.angular.z] = self.pb.getBaseVelocity(self.robot)
+            self.pub_odometry.publish(self.odom_msg)
+            # tf broadcast (odom to base_link)
+            self.br.sendTransform(self.odom_trans)
+
     def execute(self):
         """this function gets called from pybullet ros main update loop"""
-        # set msg timestamp based on current time
-        now = self.get_clock().now().to_msg()
-        self.odom_msg.header.stamp = now
-        self.odom_trans.header.stamp = now
-        # query base pose from pybullet and store in odom msg
-        position, orientation = self.pb.getBasePositionAndOrientation(self.robot)
-        [self.odom_trans.transform.translation.x,\
-         self.odom_trans.transform.translation.y,\
-         self.odom_trans.transform.translation.z] = position
-        [self.odom_msg.pose.pose.position.x,\
-         self.odom_msg.pose.pose.position.y,\
-         self.odom_msg.pose.pose.position.z] = position
-        [self.odom_trans.transform.rotation.x,\
-         self.odom_trans.transform.rotation.y,\
-         self.odom_trans.transform.rotation.z,\
-         self.odom_trans.transform.rotation.w] = orientation
-        [self.odom_msg.pose.pose.orientation.x,\
-         self.odom_msg.pose.pose.orientation.y,\
-         self.odom_msg.pose.pose.orientation.z,\
-        self.odom_msg.pose.pose.orientation.w] = orientation
-        # query base velocity from pybullet and store it in msg
-        [self.odom_msg.twist.twist.linear.x,\
-         self.odom_msg.twist.twist.linear.y,\
-         self.odom_msg.twist.twist.linear.z],\
-        [self.odom_msg.twist.twist.angular.x,\
-         self.odom_msg.twist.twist.angular.y,\
-         self.odom_msg.twist.twist.angular.z] = self.pb.getBaseVelocity(self.robot)
-        self.pub_odometry.publish(self.odom_msg)
-        # tf broadcast (odom to base_link)
-        self.br.sendTransform(self.odom_trans)
+        try:
+            if not self.wrapper.pause_simulation:
+                self.pub_odom_transform()
+        except ConnectionError as connex:
+            self.get_logger().info(str(connex))

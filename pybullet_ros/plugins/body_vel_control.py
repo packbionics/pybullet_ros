@@ -71,8 +71,12 @@ class CmdVelCtrl(RosPlugin):
         source_frame = odom, world_frame, target_frame = base_link, robot_frame
         """
         # get robot pose from pybullet
-        t, r = self.pb.getBasePositionAndOrientation(self.robot)
-        return [t[0], t[1], t[2]], [r[0], r[1], r[2], r[3]]
+        try:
+            t, r = self.pb.getBasePositionAndOrientation(self.robot)
+            return [t[0], t[1], t[2]], [r[0], r[1], r[2], r[3]]
+        except Exception as ex:
+            self.get_logger().info('An error occurred while trying to access robot position and orientation. Please ensure the robot is fully loaded in the environment.')
+            return [0, 0, 0], [0, 0, 0, 0]
 
     def asMatrix(self, target_frame, hdr):
         """copied from tf (listener.py)"""
