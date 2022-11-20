@@ -48,6 +48,8 @@ class pyBulletRosWrapper(Node):
         # import pybullet
         self.pb = importlib.import_module('pybullet')
 
+        self.pause_simulation = True
+
         # load parameters
         self.init_parameters()
         # print pybullet stuff in blue 
@@ -87,6 +89,8 @@ class pyBulletRosWrapper(Node):
         self.timer = self.create_timer(1.0 / self.loop_rate, self.wrapper_callback)
 
         self.executor.add_node(self)
+
+        self.pause_simulation = False
 
         try:
             self.executor.spin()

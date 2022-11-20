@@ -23,12 +23,6 @@ class LegControlServer(RosPlugin):
         # Contains current state information
         self.state_dict = {}
 
-        # # Initialize JointState subscription to read joint states for action feedback and result
-        # self.joint_state_sub = self.create_subscription(JointState, 'joint_states', self.joint_state_callback, rclpy.qos.qos_profile_system_default)
-
-        # # Initialize LinkState subscription to read Poselink states for action feedback and result
-        # self.link_state_sub = self.create_subscription(LinkState, 'link_states', self.link_state_callback, rclpy.qos.qos_profile_system_default)
-
         self.joint_state_pub = JointStatePub(wrapper, pybullet, robot, **kargs)
         self.link_state_pub = LinkStatePub(wrapper, pybullet, robot, **kargs)
 
@@ -74,23 +68,23 @@ class LegControlServer(RosPlugin):
         idx = np.argmax(action)
 
         try:
+            # if idx == 0:
+            #     self.move_knee(delta_pos)
+            # elif idx == 1:
+            #     self.move_knee(-delta_pos)
+            # elif idx == 2:
+            #     self.move_ankle(delta_pos)
+            # elif idx == 3:
+            #     self.move_ankle(-delta_pos)
             if idx == 0:
-                self.move_knee(delta_pos)
-            elif idx == 1:
-                self.move_knee(-delta_pos)
-            elif idx == 2:
-                self.move_ankle(delta_pos)
-            elif idx == 3:
-                self.move_ankle(-delta_pos)
-            elif idx == 4:
                 self.move_knee(delta_pos * 0.1)
-            elif idx == 5:
+            elif idx == 1:
                 self.move_knee(-delta_pos * 0.1)
-            elif idx == 6:
+            elif idx == 2:
                 self.move_ankle(delta_pos * 0.1)
-            elif idx == 7:
+            elif idx == 3:
                 self.move_ankle(-delta_pos * 0.1)
-            elif idx == 8:
+            elif idx == 4:
                 pass
         except KeyError:
             raise KeyError('Invalid name for joint used for state_dict access')
