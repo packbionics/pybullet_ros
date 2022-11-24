@@ -8,18 +8,7 @@ from sensor_msgs.msg import JointState
 from pybullet_ros.plugins.ros_plugin import RosPlugin
 
 class JointStatePub(RosPlugin):
-    """query robot state and publish position, velocity and effort values to /joint_states
-
-    Attributes:
-        rate (float): determines the rate of execute()
-        timer (Timer): handles the main loop of the plugin
-        pb (ModuleType): used to access Pybullet API
-        robot (int): id for the first loaded robot
-        rev_joint_index_name_dic (dict): dictionary of revolute joint names
-        prism_joint_index_name_dic (dict): dictionary of prismatic joint names
-        joint_index_name_dic (dict): dictionary of revolute and prismatic joint names
-        pub_joint_states (Publisher): publisher for broadcasting joint states
-    """
+    """query robot state and publish position, velocity and effort values to /joint_states"""
 
     def __init__(self, wrapper, pybullet, robot, **kargs):
         """publishes the joint states of the robot

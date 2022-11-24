@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>plugins package &mdash; pybullet_ros  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> pybullet_ros
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pybullet_ros</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pybullet_ros</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">plugins package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/plugins.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="plugins-package">
+<h1>plugins package<a class="headerlink" href="#plugins-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-plugins.body_vel_control">
+<span id="plugins-body-vel-control-module"></span><h2>plugins.body_vel_control module<a class="headerlink" href="#module-plugins.body_vel_control" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.body_vel_control.</span></span><span class="sig-name descname"><span class="pre">CmdVelCtrl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybullet_ros.plugins.html#pybullet_ros.plugins.ros_plugin.RosPlugin" title="pybullet_ros.plugins.ros_plugin.RosPlugin"><code class="xref py py-class docutils literal notranslate"><span class="pre">RosPlugin</span></code></a></p>
+<p>Subscribe to cmd_vel and apply desired speed to the robot, without any noise</p>
+<p>tf explained:
+pybullet requires that velocity of the robot is set w.r.t. world reference frame
+however cmd_vel convention required velocity to be expressed w.r.t. robot base frame
+therefore a transformation is needed.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.asMatrix">
+<span class="sig-name descname"><span class="pre">asMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.asMatrix" title="Permalink to this definition"></a></dt>
+<dd><p>copied from tf (listener.py)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.cmdVelCB">
+<span class="sig-name descname"><span class="pre">cmdVelCB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.cmdVelCB" title="Permalink to this definition"></a></dt>
+<dd><p>callback to receive vel commands from user</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.cmd_vel_force_ctrler">
+<span class="sig-name descname"><span class="pre">cmd_vel_force_ctrler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.cmd_vel_force_ctrler" title="Permalink to this definition"></a></dt>
+<dd><p>experimental code to set a torque on the robot model using a PID controller</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.execute" title="Permalink to this definition"></a></dt>
+<dd><p>this function gets called from pybullet ros main update loop</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.fromTranslationRotation">
+<span class="sig-name descname"><span class="pre">fromTranslationRotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">translation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.fromTranslationRotation" title="Permalink to this definition"></a></dt>
+<dd><p>copied from tf (listener.py)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.lookupTransform">
+<span class="sig-name descname"><span class="pre">lookupTransform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'base_link'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'odom'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.lookupTransform" title="Permalink to this definition"></a></dt>
+<dd><p>copied from tf (listener.py)
+source_frame = odom, world_frame, target_frame = base_link, robot_frame</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.quaternion_matrix">
+<span class="sig-name descname"><span class="pre">quaternion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quaternion</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.quaternion_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>copied from tf (listener.py)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.transformVector3">
+<span class="sig-name descname"><span class="pre">transformVector3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v3s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.transformVector3" title="Permalink to this definition"></a></dt>
+<dd><p>copied from tf (listener.py)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.body_vel_control.CmdVelCtrl.translation_matrix">
+<span class="sig-name descname"><span class="pre">translation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.body_vel_control.CmdVelCtrl.translation_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>copied from tf (listener.py)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.cart_control">
+<span id="plugins-cart-control-module"></span><h2>plugins.cart_control module<a class="headerlink" href="#module-plugins.cart_control" title="Permalink to this heading"></a></h2>
+<p>position, velocity and effort control for the cart on cartpole</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.cart_control.CartControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.cart_control.</span></span><span class="sig-name descname"><span class="pre">CartControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.cart_control.CartControl" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybullet_ros.plugins.html#pybullet_ros.plugins.control.Control" title="pybullet_ros.plugins.control.Control"><code class="xref py py-class docutils literal notranslate"><span class="pre">Control</span></code></a></p>
+</dd></dl>
+
+</section>
+<section id="module-plugins.control">
+<span id="plugins-control-module"></span><h2>plugins.control module<a class="headerlink" href="#module-plugins.control" title="Permalink to this heading"></a></h2>
+<p>position, velocity and effort control for all revolute joints on the robot</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.control.Control">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.control.</span></span><span class="sig-name descname"><span class="pre">Control</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.control.Control" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybullet_ros.plugins.html#pybullet_ros.plugins.ros_plugin.RosPlugin" title="pybullet_ros.plugins.ros_plugin.RosPlugin"><code class="xref py py-class docutils literal notranslate"><span class="pre">RosPlugin</span></code></a></p>
+<p>position, velocity and effort control for all revolute and prismatic joints on the robot</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.control.Control.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.control.Control.execute" title="Permalink to this definition"></a></dt>
+<dd><p>this function gets called from pybullet ros main update loop</p>
+<p>check if user has commanded a joint
+and forward the request to pybullet</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.environment">
+<span id="plugins-environment-module"></span><h2>plugins.environment module<a class="headerlink" href="#module-plugins.environment" title="Permalink to this heading"></a></h2>
+<p>plugin that is loaded one time only at the beginning
+It is meant to be for you to upload your environment</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.environment.Environment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.environment.</span></span><span class="sig-name descname"><span class="pre">Environment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pybullet_ros_node</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.environment.Environment" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.environment.Environment.load_environment">
+<span class="sig-name descname"><span class="pre">load_environment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.environment.Environment.load_environment" title="Permalink to this definition"></a></dt>
+<dd><p>set gravity, ground plane and load URDF or SDF models as required</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.environment_template">
+<span id="plugins-environment-template-module"></span><h2>plugins.environment_template module<a class="headerlink" href="#module-plugins.environment_template" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.environment_template.Environment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.environment_template.</span></span><span class="sig-name descname"><span class="pre">Environment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.environment_template.Environment" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybullet_ros.plugins.html#pybullet_ros.plugins.environment.Environment" title="pybullet_ros.plugins.environment.Environment"><code class="xref py py-class docutils literal notranslate"><span class="pre">Environment</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.environment_template.Environment.load_environment_via_code">
+<span class="sig-name descname"><span class="pre">load_environment_via_code</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.environment_template.Environment.load_environment_via_code" title="Permalink to this definition"></a></dt>
+<dd><p>This method provides the possibility for the user to define an environment via python code</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.joint_state_pub">
+<span id="plugins-joint-state-pub-module"></span><h2>plugins.joint_state_pub module<a class="headerlink" href="#module-plugins.joint_state_pub" title="Permalink to this heading"></a></h2>
+<p>query robot state and publish position, velocity and effort values to /joint_states</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.joint_state_pub.JointStatePub">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.joint_state_pub.</span></span><span class="sig-name descname"><span class="pre">JointStatePub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.joint_state_pub.JointStatePub" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybullet_ros.plugins.html#pybullet_ros.plugins.ros_plugin.RosPlugin" title="pybullet_ros.plugins.ros_plugin.RosPlugin"><code class="xref py py-class docutils literal notranslate"><span class="pre">RosPlugin</span></code></a></p>
+<p>query robot state and publish position, velocity and effort values to /joint_states</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.joint_state_pub.JointStatePub.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.joint_state_pub.JointStatePub.execute" title="Permalink to this definition"></a></dt>
+<dd><p>this function gets called from pybullet ros main update loop</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.joint_state_pub.JointStatePub.get_joint_state">
+<span class="sig-name descname"><span class="pre">get_joint_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.joint_state_pub.JointStatePub.get_joint_state" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.joint_state_pub.JointStatePub.pub_joint_state">
+<span class="sig-name descname"><span class="pre">pub_joint_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.joint_state_pub.JointStatePub.pub_joint_state" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.laser_scanner">
+<span id="plugins-laser-scanner-module"></span><h2>plugins.laser_scanner module<a class="headerlink" href="#module-plugins.laser_scanner" title="Permalink to this heading"></a></h2>
+<p>Laser scanner simulation based on pybullet rayTestBatch function
+This code does not add noise to the laser scanner readings</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.laser_scanner.LaserScanner">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.laser_scanner.</span></span><span class="sig-name descname"><span class="pre">LaserScanner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.laser_scanner.LaserScanner" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybullet_ros.plugins.html#pybullet_ros.plugins.ros_plugin.RosPlugin" title="pybullet_ros.plugins.ros_plugin.RosPlugin"><code class="xref py py-class docutils literal notranslate"><span class="pre">RosPlugin</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.laser_scanner.LaserScanner.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.laser_scanner.LaserScanner.execute" title="Permalink to this definition"></a></dt>
+<dd><p>this function gets called from pybullet ros main update loop</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.laser_scanner.LaserScanner.prepare_rays">
+<span class="sig-name descname"><span class="pre">prepare_rays</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.laser_scanner.LaserScanner.prepare_rays" title="Permalink to this definition"></a></dt>
+<dd><p>assume laser is in the origin and compute its x, y beam end position</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.laser_scanner.LaserScanner.transform_rays">
+<span class="sig-name descname"><span class="pre">transform_rays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">laser_position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">laser_orientation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.laser_scanner.LaserScanner.transform_rays" title="Permalink to this definition"></a></dt>
+<dd><p>transform rays from reference frame using pybullet functions (not tf)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="plugins-leg-control-server-module">
+<h2>plugins.leg_control_server module<a class="headerlink" href="#plugins-leg-control-server-module" title="Permalink to this heading"></a></h2>
+</section>
+<section id="plugins-link-state-pub-module">
+<h2>plugins.link_state_pub module<a class="headerlink" href="#plugins-link-state-pub-module" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-plugins.odometry">
+<span id="plugins-odometry-module"></span><h2>plugins.odometry module<a class="headerlink" href="#module-plugins.odometry" title="Permalink to this heading"></a></h2>
+<p>Query robot base pose and speed from pybullet and publish to /odom topic
+This component does not add any noise to it</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.odometry.SimpleOdometry">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.odometry.</span></span><span class="sig-name descname"><span class="pre">SimpleOdometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.odometry.SimpleOdometry" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybullet_ros.plugins.html#pybullet_ros.plugins.ros_plugin.RosPlugin" title="pybullet_ros.plugins.ros_plugin.RosPlugin"><code class="xref py py-class docutils literal notranslate"><span class="pre">RosPlugin</span></code></a></p>
+<p>Handles odometry for main robot</p>
+<p>Query robot base pose and speed from pybullet and publish to /odom topic.
+This component does not add any noise to it</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.odometry.SimpleOdometry.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.odometry.SimpleOdometry.execute" title="Permalink to this definition"></a></dt>
+<dd><p>this function gets called from pybullet ros main update loop</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.odometry.SimpleOdometry.pub_odom_transform">
+<span class="sig-name descname"><span class="pre">pub_odom_transform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.odometry.SimpleOdometry.pub_odom_transform" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.plugin">
+<span id="plugins-plugin-module"></span><h2>plugins.plugin module<a class="headerlink" href="#module-plugins.plugin" title="Permalink to this heading"></a></h2>
+<p>TODO: briefly describe your plugin here</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.plugin.Plugin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.plugin.</span></span><span class="sig-name descname"><span class="pre">Plugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.plugin.Plugin" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.plugin.Plugin.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.plugin.Plugin.execute" title="Permalink to this definition"></a></dt>
+<dd><p>this function gets called from pybullet ros main update loop</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.pve">
+<span id="plugins-pve-module"></span><h2>plugins.pve module<a class="headerlink" href="#module-plugins.pve" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.pve.PveControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.pve.</span></span><span class="sig-name descname"><span class="pre">PveControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.pve.PveControl" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>helper class to receive position, velocity or effort (pve) control commands</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.pve.PveControl.get_is_data_available">
+<span class="sig-name descname"><span class="pre">get_is_data_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.pve.PveControl.get_is_data_available" title="Permalink to this definition"></a></dt>
+<dd><p>method to retrieve flag to indicate that a command has been received</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>determines if there is more data to process</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.pve.PveControl.get_joint_index">
+<span class="sig-name descname"><span class="pre">get_joint_index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.pve.PveControl.get_joint_index" title="Permalink to this definition"></a></dt>
+<dd><p>method used to retrieve the joint int index that this class points to</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>index of associated joint</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.pve.PveControl.get_joint_name">
+<span class="sig-name descname"><span class="pre">get_joint_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.pve.PveControl.get_joint_name" title="Permalink to this definition"></a></dt>
+<dd><p>Unused method provided for completeness (pybullet works based upon joint index, not names)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>name of associated joint</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.pve.PveControl.get_last_cmd">
+<span class="sig-name descname"><span class="pre">get_last_cmd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.pve.PveControl.get_last_cmd" title="Permalink to this definition"></a></dt>
+<dd><p>method to fetch the last received command</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>value of the last received command</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.pve.PveControl.pve_controlCB">
+<span class="sig-name descname"><span class="pre">pve_controlCB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.pve.PveControl.pve_controlCB" title="Permalink to this definition"></a></dt>
+<dd><p>position, velocity or effort callback</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>msg</strong> (<em>Float64</em>) – the msg passed by the ROS network via topic publication</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.rgbd_camera">
+<span id="plugins-rgbd-camera-module"></span><h2>plugins.rgbd_camera module<a class="headerlink" href="#module-plugins.rgbd_camera" title="Permalink to this heading"></a></h2>
+<p>RGBD camera sensor simulation for pybullet_ros base on pybullet.getCameraImage()</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.rgbd_camera.RGBDCamera">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.rgbd_camera.</span></span><span class="sig-name descname"><span class="pre">RGBDCamera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.rgbd_camera.RGBDCamera" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pybullet_ros.plugins.html#pybullet_ros.plugins.ros_plugin.RosPlugin" title="pybullet_ros.plugins.ros_plugin.RosPlugin"><code class="xref py py-class docutils literal notranslate"><span class="pre">RosPlugin</span></code></a></p>
+<p>Plugin used to process camera frames from simulated camera in Pybullet</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.rgbd_camera.RGBDCamera.calc_true_depth">
+<span class="sig-name descname"><span class="pre">calc_true_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">depth_img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">near</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">far</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.rgbd_camera.RGBDCamera.calc_true_depth" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.rgbd_camera.RGBDCamera.compute_camera_target">
+<span class="sig-name descname"><span class="pre">compute_camera_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_orientation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.rgbd_camera.RGBDCamera.compute_camera_target" title="Permalink to this definition"></a></dt>
+<dd><p>calculates a position 5m in front of the camera</p>
+<p>camera target is a point 5m in front of the robot camera
+This method is used to tranform it to the world reference frame
+NOTE: this method uses pybullet functions and not tf</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>camera_position</strong> (<em>numpy.array</em>) – XYZ position of the camera</p></li>
+<li><p><strong>camera_orientation</strong> (<em>numpy.array</em>) – Quaternion representation of the camera orientation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a XYZ position 5m in front of the camera</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.rgbd_camera.RGBDCamera.compute_projection_matrix">
+<span class="sig-name descname"><span class="pre">compute_projection_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.rgbd_camera.RGBDCamera.compute_projection_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>calculated a 4x4 project matrix based on intrinsic camera parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>4x4 project matrix</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.rgbd_camera.RGBDCamera.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.rgbd_camera.RGBDCamera.execute" title="Permalink to this definition"></a></dt>
+<dd><p>main loop of the plugin</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.rgbd_camera.RGBDCamera.extract_depth">
+<span class="sig-name descname"><span class="pre">extract_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.rgbd_camera.RGBDCamera.extract_depth" title="Permalink to this definition"></a></dt>
+<dd><p>retrieves depth information from a frame of the camera</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>camera_image</strong> (<em>numpy.array</em>) – numpy array containing frame in RGBA format</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>numpy array containing depth information in range 0.0 - 1.0</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.rgbd_camera.RGBDCamera.extract_frame">
+<span class="sig-name descname"><span class="pre">extract_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.rgbd_camera.RGBDCamera.extract_frame" title="Permalink to this definition"></a></dt>
+<dd><p>retrieves the RGB information from a frame of the camera</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>camera_image</strong> (<em>numpy.array</em>) – numpy array containing frame in RGBA format</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>numpy array containing frame in RGB format</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.rgbd_camera.RGBDCamera.flip_image">
+<span class="sig-name descname"><span class="pre">flip_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">depth_img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.rgbd_camera.RGBDCamera.flip_image" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins.ros_plugin">
+<span id="plugins-ros-plugin-module"></span><h2>plugins.ros_plugin module<a class="headerlink" href="#module-plugins.ros_plugin" title="Permalink to this heading"></a></h2>
+<p>TODO: briefly describe your plugin here</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="plugins.ros_plugin.RosPlugin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">plugins.ros_plugin.</span></span><span class="sig-name descname"><span class="pre">RosPlugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wrapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybullet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robot</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.ros_plugin.RosPlugin" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="plugins.ros_plugin.RosPlugin.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.ros_plugin.RosPlugin.execute" title="Permalink to this definition"></a></dt>
+<dd><p>this function gets called from pybullet ros main update loop</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-plugins">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-plugins" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Oscar Lima.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -12,16 +12,7 @@ from pybullet_ros.plugins.ros_plugin import RosPlugin
 import rclpy.qos
 
 class LinkStatePub(RosPlugin):
-    """query robot state and publish position, velocity and effort values to /joint_states
-
-    Attributes:
-        rate (float): determines the rate of execute()
-        timer (Timer): handles the main loop of the plugin
-        pb (ModuleType): used to access Pybullet API
-        robot (int): id for the first loaded robot
-        link_names_to_ids_dic (dict): dictionary mapping link names to link ids
-        pub_link_states (Publisher): publisher for broadcasting joint states
-    """
+    """query robot state and publish position, velocity and effort values to /joint_states"""
 
     def __init__(self, wrapper, pybullet, robot, **kargs):
         """publishes the joint states of the robot

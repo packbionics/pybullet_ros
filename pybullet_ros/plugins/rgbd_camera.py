@@ -24,29 +24,7 @@ from pybullet_ros.plugins.ros_plugin import RosPlugin
 
 
 class RGBDCamera(RosPlugin):
-    """Plugin used to process camera frames from simulated camera in Pybullet
-
-    Attributes:
-        rate (float): determines the rate of execute()
-        timer (Timer): handles the main loop of the plugin
-        pb (ModuleType): used to access Pybullet API
-        robot (int): id for the first loaded robot
-        camera_pose_msg (PoseStamped): contains the XYZ position and orientation of the camera
-        camera_position (Point): used to update XYZ position of camera
-        camera_orientation (Quaternion): used to update orientation of camera
-        image_msg (Image): contains image information of the most current camera frame
-        image_mode (str): specifies the image mode to access (e.g. RGB, depth, etc)
-        pb_camera_link_id (int): id of the camera link used for computer vision
-        pub_camera_state (Publisher): ROS 2 publisher for broadcasting current camera pose
-        pub_image (Publisher): ROS 2 publisher for broadcasting current simulated frame
-        hfov (float): horizontal FOV of camera
-        vfov (float): vertical FOV of the camera
-        near_plane (float): nearest depth to the camera that is captured
-        far_plane (float): farthest depth from the camera that is captured
-        projection_matrix (numpy.array): 4x4 matrix that maps 3D points to image plane
-        camera_params_serv (CameraParams): service that handles requests for camera parameters
-        image_bridge (CvBridge): used for converting OpenCV images to ROS 2 Image msg type
-    """
+    """Plugin used to process camera frames from simulated camera in Pybullet"""
 
     def __init__(self, wrapper, pybullet, robot, **kargs):
         """sets up parameters, topics, and services

@@ -14,31 +14,12 @@ from utils import ModelLoader
 from utils import urdf_from_xacro
 
 class pyBulletRosWrapper(Node):
-    """ROS wrapper class for pybullet simulator
-
-    Attributes:
-        executor (MultiThreadedExecutor): handles the threads running the plugins
-        pb (ModuleType): used to access Pybullet API
-        environment (_type_): used to define simulation environment
-        urdf_flags (int): used to process loaded URDF data
-        robot (int): first robot loaded
-        connected_to_physics_server (bool): identifies if the process is attached to an instance of Pybullet simulation
-        rev_joint_index_name_dic (dict): dictionary mapping joint index to joint name for revolute joints
-        prismatic_joint_index_name_dic (dict): dictionary mapping joint index to joint name for prismatic joints
-        fixed_joint_index_name_dic (dict): dictionary mapping joint index to joint name for fixed joints
-        link_names_to_ids_dic (dict): dictionary mapping link names to link indices
-        plugins (list): list of plugins to load
-        timer (Timer): used as a handle for the timer running the main loop
-        loop_rate (float): determines the rate of the main loop
-        is_gui_needed (bool): determines if the simulation starts with a GUI
-        pause_simulation (bool): identifies if the simulation is paused or not
-        env_plugin (str): name of the environment plugin
-        plugin_import_prefix (str): prefix used to import plugins
-    """
+    """ROS wrapper class for pybullet simulator"""
 
     def __init__(self):
         """Starts Pybullet engine and runs plugins in parallel"""
 
+        # Registers class as a ROS Node class
         super().__init__('pybullet_ros', automatically_declare_parameters_from_overrides=True)
 
         # declare handler for multi-threaded processes
@@ -48,19 +29,27 @@ class pyBulletRosWrapper(Node):
         # import pybullet
         self.pb = importlib.import_module('pybullet')
 
+        # tracks if the simulation is paused or resetting
         self.pause_simulation = True
 
         # load parameters
         self.init_parameters()
+
         # print pybullet stuff in blue 
         print('\033[34m')
+
         # start physics engine client
-        self.start_engine(gui=self.is_gui_needed) # we dont need to store the physics client for now...
+        self.start_engine(gui=self.is_gui_needed)
+
         # get pybullet path in your system and store it internally for future use, e.g. to set floor
         self.pb.setAdditionalSearchPath(pybullet_data.getDataPath())
+
+        # Load the environment plugin for defining the environment of the simulation
         self.environment = getattr(importlib.import_module(f'{self.plugin_import_prefix}.{self.env_plugin}'), 'Environment')(self)
-        # create ROS 2 services
+        
+        # create ROS 2 services for pausing, resuming, resetting the simulation, etc.
         self.init_services()
+
         # load robot URDF model, set gravity, and ground plane
         self.urdf_flags = self.init_environment()
         self.robot = self.init_pybullet_models()
@@ -70,21 +59,26 @@ class pyBulletRosWrapper(Node):
             return # Error while loading urdf file
         else:
             self.connected_to_physics_server = True
+
         # get all revolute joint names and pybullet index
         self.rev_joint_index_name_dic, self.prismatic_joint_index_name_dic, self.fixed_joint_index_name_dic, self.link_names_to_ids_dic = self.get_properties()
+        
         # import plugins dynamically
         self.plugins = []
         plugins = self.get_parameter('plugins').value
         if not plugins or plugins == ['']:
             self.get_logger().warn('No plugins found, forgot to set param plugins?')
+
         # return to normal shell color
         print('\033[0m')
+
         # load plugins
         self.init_plugins(plugins)
 
         # track number of timesteps per simulation
         self.sim_time_steps = 0
 
+        # start pybullet simulation
         self.get_logger().info('pybullet ROS wrapper initialized')
         self.timer = self.create_timer(1.0 / self.loop_rate, self.wrapper_callback)
 
@@ -95,7 +89,8 @@ class pyBulletRosWrapper(Node):
         try:
             self.executor.spin()
         except Exception as e:
-            self.get_logger().error(str(repr(e)))
+            exc_message = repr(e)
+            self.get_logger().error(str(exc_message))
         finally:
             self.executor.shutdown()
             self.destroy_node()
@@ -115,8 +110,8 @@ class pyBulletRosWrapper(Node):
         - joint index to joint name x2 (1 for revolute, 1 for fixed joints)
         - link name to link index dictionary
 
-        Returns:
-            tuple: tuple containing 3 dictionaries
+        :return: tuple containing 3 dictionaries
+        :rtype: tuple
         """
 
         rev_joint_index_name_dic = {}
@@ -141,11 +136,10 @@ class pyBulletRosWrapper(Node):
     def start_engine(self, gui=True):
         """Starts Pybullet physics engine
 
-        Args:
-            gui (bool, optional): Determines if PyBullet starts with or without a GUI. Defaults to True.
-
-        Returns:
-            int: a physics client id
+        :param gui: determines if PyBullet starts with or without a GUI, defaults to True
+        :type gui: bool, optional
+        :return: a physics client id
+        :rtype: int
         """
 
         if(gui):
@@ -161,19 +155,22 @@ class pyBulletRosWrapper(Node):
             self.get_logger().info('-------------------------')
             return self.pb.connect(self.pb.DIRECT)
 
-    def load_urdf(self, path, pose, yaw, urdf_flags, fixed_base=False):
+    def load_urdf(self, path: str, pose: list[float], yaw: float, urdf_flags: int, fixed_base=False):   
         """Loads a single URDF or XACRO robot
 
-        Args:
-            path (str): Path of the URDF or XACRO
-            pose (list): XYZ coordinates of the robot
-            yaw (float): Yaw of the robot
-            urdf_flags (int): flags for processing URDF data
-            fixed_base (bool, optional): force the base of the loaded object to be static. Defaults to False.
-
-        Returns:
-            int: a body unique id, a non-negative integer value
-        """
+        :param path: Path of the URDF or XACRO
+        :type path: str
+        :param pose: XYZ coordinates of the robot
+        :type pose: list[float]
+        :param yaw: Yaw of the robot
+        :type yaw: float
+        :param urdf_flags: flags for processing URDF data
+        :type urdf_flags: int
+        :param fixed_base: force the base of the loaded object to be static, defaults to False
+        :type fixed_base: bool, optional
+        :return: int
+        :rtype: a body unique id, a non-negative integer value
+        """        
 
         orientation = self.pb.getQuaternionFromEuler([0.0, 0.0, yaw])
 
@@ -217,9 +214,9 @@ class pyBulletRosWrapper(Node):
     def init_pybullet_models(self):
         """load URDF models
 
-        Returns:
-            int: unique body id of the first loaded robot
-        """
+        :return: unique body id of the first loaded robot
+        :rtype: int
+        """        
 
         # load environment, set URDF flags
         fixed_base = self.get_parameter('fixed_base').value
@@ -241,9 +238,9 @@ class pyBulletRosWrapper(Node):
     def init_environment(self):
         """set gravity, ground plane and environment
 
-        Returns:
-            int: flags for processing URDF data
-        """
+        :return: flags for processing URDF data
+        :rtype: int
+        """        
 
         # load environment
         self.get_logger().info('loading environment')
@@ -259,11 +256,11 @@ class pyBulletRosWrapper(Node):
 
         return urdf_flags
 
-    def init_plugins(self, plugins):
+    def init_plugins(self, plugins: list[str]):
         """finds plugins and sets them up to be executed in multiple threads
 
-        Args:
-            plugins (list): list of strings representing plugins to load
+        :param plugins: list of strings representing plugins to load
+        :type plugins: list[str]
         """
 
         for plugin in plugins:
@@ -281,16 +278,16 @@ class pyBulletRosWrapper(Node):
             self.plugins.append(obj)
             self.executor.add_node(obj)
 
-    def handle_reset_simulation(self, req, resp):
+    def handle_reset_simulation(self, req: Empty.Request, resp: Empty.Response):
         """Callback to handle the service offered by this node to reset the simulation
 
-        Args:
-            req (SetBool.Request): an empty data structure repreenting request by the client
-            resp (SetBool.Response): an empty data structure representing response to the client
-
-        Returns:
-            response: an empty data structure representing response to the client
-        """
+        :param req: an empty data structure repreenting request by the client
+        :type req: Empty.Request
+        :param resp: an empty data structure representing response to the client
+        :type resp: Empty.Response
+        :return: an empty data structure representing response to the client
+        :rtype: Empty.Response
+        """        
 
         self.get_logger().info('resetting simulation now')
         # pause simulation to prevent reading joint values with an empty world
@@ -307,42 +304,37 @@ class pyBulletRosWrapper(Node):
         self.pause_simulation = False
         return resp
 
-    def handle_pause_physics(self, req):
+    def handle_pause_physics(self, req: Empty.Request, resp: Empty.Response):
         """pause simulation, raise flag to prevent pybullet to execute self.pb.stepSimulation()
 
-        Args:
-            req (Empty): an empty data structure
-
-        Returns:
-            list: empty list
-        """
+        :param req: an empty data structure
+        :type req: Empty.Request
+        :param resp: an empty data structure representing response to the client
+        :type resp: Empty.Response
+        :raises flag: _description_
+        :return: an empty data structure representing response to the client
+        :rtype: Empty.Response
+        """        
 
         self.get_logger().info('pausing simulation')
         self.pause_simulation = False
-        return []
+        return resp
 
-    def handle_unpause_physics(self, req):
+    def handle_unpause_physics(self, req: Empty.Request, resp: Empty.Response):
         """unpause simulation, lower flag to allow pybullet to execute self.pb.stepSimulation()
 
-        Args:
-            req (Empty): an empty data structure
-
-        Returns:
-            list: empty list
+        :param req: an empty data structure
+        :type req: Empty.Request
+        :param resp: an empty data structure representing response to the client
+        :type resp: Empty.Response
+        :return: an empty data structure representing response to the client
+        :rtype: Empty.Response
         """
 
         self.get_logger().info('unpausing simulation')
         self.pause_simulation = True
-        return []
+        return resp
 
-    def pause_simulation_function(self):
-        """pauses the PyBullet engine simulation
-
-        Returns:
-            bool: identifies if the simulation is paused or not
-        """
-
-        return self.pause_simulation
 
 def main():
     try:

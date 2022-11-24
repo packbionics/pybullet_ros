@@ -11,12 +11,5 @@ class Environment(DefaultEnv):
     def load_environment_via_code(self):
         """
         This method provides the possibility for the user to define an environment via python code
-        example:
-        self.pb.loadURDF(...)
-        self.pb.loadSDF(...)
-        self.pb.loadSoftBody(...)
-        self.pb.setTimeStep(0.001)
-        self.pb.setPhysicsEngineParameter(sparseSdfVoxelSize=0.25) # ? related to soft bodies
-        etc...
         """
         self.node.get_logger.warn('loading custom environment via code!')

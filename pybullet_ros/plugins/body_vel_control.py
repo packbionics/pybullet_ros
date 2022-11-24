@@ -16,11 +16,6 @@ class CmdVelCtrl(RosPlugin):
     pybullet requires that velocity of the robot is set w.r.t. world reference frame
     however cmd_vel convention required velocity to be expressed w.r.t. robot base frame
     therefore a transformation is needed.
-
-    Attributes:
-        cmd_vel_msg (): command msg
-        received_cmd_vel_time (): time of received command
-        subscription(): subscription to Twist topic
     """
 
     def __init__(self, wrapper, pybullet, robot, **kargs):

@@ -4,7 +4,7 @@ from glob import glob
 from setuptools import setup
 
 package_name = 'pybullet_ros'
-submodules = [os.path.join(package_name, sub) for sub in ['plugins', 'sdf']]
+submodules = [os.path.join(package_name, sub) for sub in ['plugins']]
 
 data_files = [
         ('share/ament_index/resource_index/packages',
@@ -30,13 +30,13 @@ for directory in data_directories:
 
 setup(
     name=package_name,
-    version='0.0.1',
+    version='0.1.0',
     packages=[package_name] + submodules,
     data_files=data_files,
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='jasonx',
-    maintainer_email='59701038+JChunX@users.noreply.github.com',
+    maintainer='anthonybrown0528',
+    maintainer_email='anthonybrown0528@protonmail.com',
     description='ROS2 wrapper for pybullet simulator',
     license='MIT',
     tests_require=['pytest'],

@@ -2,7 +2,7 @@ FROM osrf/ros:foxy-desktop
 
 RUN apt-get update && apt-get upgrade -y
 
-RUN apt-get install python3-pip
+RUN apt-get install python3-pip ros-foxy-xacro -y
 RUN pip install pybullet
 
 RUN mkdir -p /home/dev-ws/src

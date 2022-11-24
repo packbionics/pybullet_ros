@@ -1,16 +1,7 @@
 from std_msgs.msg import Float64
 
 class PveControl:
-    """helper class to receive position, velocity or effort (pve) control commands
-
-    Attributes:
-        node (Node): ROS 2 node
-        subscription (Subscription): subscription used to receive input commands from ROS 2 topic
-        cmd (float): value of the last received command
-        data_available (bool): determines if there is more data to process
-        joint_index (int): index of joint used by Pybullet
-        joint_name (str): name of joint
-    """
+    """helper class to receive position, velocity or effort (pve) control commands"""
 
     def __init__(self, node, joint_index, joint_name, controller_type):
         """constructor

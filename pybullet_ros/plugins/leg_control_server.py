@@ -2,7 +2,6 @@ import rclpy
 from rclpy.action import ActionServer
 
 from jetleg_interfaces.action import LegAction
-from jetleg_interfaces.msg import LinkState
 
 from std_msgs.msg import Float64
 

@@ -11,23 +11,7 @@ from pybullet_ros.plugins.pve import PveControl
 
 # plugin is implemented below
 class Control(RosPlugin):
-    """position, velocity and effort control for all revolute and prismatic joints on the robot
-
-    Attributes:
-        rate (float): determines the rate of execute()
-        timer (Timer): handles the main loop of the plugin
-        pb (ModuleType): used to access Pybullet API
-        robot (int): id for the first loaded robot
-        position_joint_commands (list): contains history of position commands
-        velocity_joint_commands (list): contains history of velocity commands
-        effort_joint_commands (list): contains history of effort commands
-        max_effort (float): maximum effort to process for any type of control
-        joint_index_name_dic (dict): dictionary of joint index to joint names
-        pc_subscribers (list): list of position control command subscribers
-        vc_subscribers (list): list of velocity control command subscribers
-        ec_subscribers (list): list of effort control command subscribers
-        joint_indices (list): list of joint indices
-    """
+    """position, velocity and effort control for all revolute and prismatic joints on the robot"""
 
     def __init__(self, wrapper, pybullet, robot, **kargs):
         """constructor
