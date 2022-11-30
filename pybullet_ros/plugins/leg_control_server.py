@@ -45,6 +45,8 @@ class LegControlServer(ROSPlugin):
 
     def execute_callback(self, goal_handle):
 
+        self.retrieve_state()
+
         # Execute requested action
         self.perform_action(np.array(goal_handle.request.action))
 
