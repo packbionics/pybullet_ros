@@ -6,9 +6,9 @@ import numpy as np
 from geometry_msgs.msg import Twist, Vector3, Vector3Stamped
 from rclpy.duration import Duration
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
-class CmdVelCtrl(RosPlugin):
+class CmdVelCtrl(ROSPlugin):
     """
     Subscribe to cmd_vel and apply desired speed to the robot, without any noise
 

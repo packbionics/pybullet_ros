@@ -7,14 +7,14 @@ from std_msgs.msg import Float64
 
 from sensor_msgs.msg import JointState
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
 from pybullet_ros.plugins.joint_state_pub import JointStatePub
 from pybullet_ros.plugins.link_state_pub import LinkStatePub
 
 import numpy as np
 
-class LegControlServer(RosPlugin):
+class LegControlServer(ROSPlugin):
 
     def __init__(self, wrapper, pybullet, robot, **kargs):
         super().__init__(wrapper, 'pybullet_ros_leg_control_server', pybullet, robot, automatically_declare_parameters_from_overrides=True)
@@ -67,14 +67,6 @@ class LegControlServer(RosPlugin):
         idx = np.argmax(action)
 
         try:
-            # if idx == 0:
-            #     self.move_knee(delta_pos)
-            # elif idx == 1:
-            #     self.move_knee(-delta_pos)
-            # elif idx == 2:
-            #     self.move_ankle(delta_pos)
-            # elif idx == 3:
-            #     self.move_ankle(-delta_pos)
             if idx == 0:
                 self.move_knee(delta_pos * 0.1)
             elif idx == 1:

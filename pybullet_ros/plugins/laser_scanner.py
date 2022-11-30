@@ -11,9 +11,9 @@ import numpy as np
 import rclpy
 from sensor_msgs.msg import LaserScan
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
-class LaserScanner(RosPlugin):
+class LaserScanner(ROSPlugin):
     def __init__(self, wrapper, pybullet, robot, **kargs):
         super().__init__(wrapper, 'laser_scanner', pybullet, robot, automatically_declare_parameters_from_overrides=True)
 

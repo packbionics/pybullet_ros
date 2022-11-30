@@ -7,11 +7,11 @@ from jetleg_interfaces.msg import LinkState
 
 from geometry_msgs.msg import Point, Quaternion
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
 import rclpy.qos
 
-class LinkStatePub(RosPlugin):
+class LinkStatePub(ROSPlugin):
     """query robot state and publish position, velocity and effort values to /joint_states"""
 
     def __init__(self, wrapper, pybullet, robot, **kargs):

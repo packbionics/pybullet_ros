@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-RGBD camera sensor simulation for pybullet_ros base on pybullet.getCameraImage()
+RGBD camera sensor simulation for pybullet_ros based on pybullet.getCameraImage()
 """
 
 import math
@@ -20,10 +20,10 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Quaternion
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
 
-class RGBDCamera(RosPlugin):
+class RGBDCamera(ROSPlugin):
     """Plugin used to process camera frames from simulated camera in Pybullet"""
 
     def __init__(self, wrapper, pybullet, robot, **kargs):
@@ -34,7 +34,7 @@ class RGBDCamera(RosPlugin):
             robot (int): first robot loaded
         """
 
-        super().__init__(wrapper, 'pybullet_ros_rgbd_camera', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        super().__init__(wrapper, 'pybullet_ros_rgbd_camera', pybullet, robot)
         
         # create msg placeholders for publication
         self.camera_pose_msg = PoseStamped()
@@ -42,6 +42,19 @@ class RGBDCamera(RosPlugin):
         self.camera_orientation = Quaternion()
         self.rgb_img_msg = Image()
         self.depth_img_msg = Image()
+
+        self.declare_parameter('image_mode', 'rgbd')
+        self.declare_parameter('rgbd_camera/resolution/width', 1280)
+        self.declare_parameter('rgbd_camera/resolution/height', 720)
+        self.declare_parameter('rgbd_camera/frame_id', 'camera_link')
+        self.declare_parameter('rgbd_camera/pc2_frame_id', 'camera_link')
+        self.declare_parameter('rgbd_camera/resolution/is_bigendian', False)
+        self.declare_parameter('rgbd_camera/resolution/encoding', 'rgba8')
+        self.declare_parameter('rgbd_camera/resolution/step', 5120)
+        self.declare_parameter('rgbd_camera/hfov', 110.0)
+        self.declare_parameter('rgbd_camera/vfov', 70.0)
+        self.declare_parameter('rgbd_camera/near_plane', 1.0)
+        self.declare_parameter('rgbd_camera/far_plane', 20.0)
         
         self.image_mode = self.get_parameter('image_mode').value
         assert self.image_mode in ['rgb', 'rgbd', 'depth', 'segmentation']

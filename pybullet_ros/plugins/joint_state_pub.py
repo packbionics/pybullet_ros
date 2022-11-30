@@ -5,9 +5,9 @@ query robot state and publish position, velocity and effort values to /joint_sta
 """
 from sensor_msgs.msg import JointState
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
-class JointStatePub(RosPlugin):
+class JointStatePub(ROSPlugin):
     """query robot state and publish position, velocity and effort values to /joint_states"""
 
     def __init__(self, wrapper, pybullet, robot, **kargs):

@@ -9,9 +9,9 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, TransformStamped
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
-class SimpleOdometry(RosPlugin):
+class SimpleOdometry(ROSPlugin):
     """Handles odometry for main robot
 
     Query robot base pose and speed from pybullet and publish to /odom topic.
