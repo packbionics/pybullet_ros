@@ -1,8 +1,0 @@
-R2D2:
-  Package: pybullet_ros
-  RelPath: common/test/urdf/r2d2_robot/r2d2.urdf.xacro
-  Pose:
-    - 0.0
-    - 0.0
-    - 0.1
-  Yaw: 0.0

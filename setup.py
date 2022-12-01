@@ -10,7 +10,6 @@ data_files = [
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('lib/pybullet_ros', ['pybullet_ros/utils.py'])
     ]
 
 def glob_recursive(data_files, directory):
@@ -23,7 +22,7 @@ def glob_recursive(data_files, directory):
         for dir in subdirectories:
             glob_recursive(data_files, dir)
 
-data_directories = ['launch', 'config', 'scripts', 'config', 'common']
+data_directories = ['launch', 'config', 'scripts', 'config', 'common', 'doc']
 
 for directory in data_directories:
     glob_recursive(data_files, directory)

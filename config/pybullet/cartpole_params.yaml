@@ -3,11 +3,9 @@
 
 # pybullet plugins, will be loaded during runtime
 # -----------------------------------------------------------------------
-# body_vel_control - Subscribe to cmd_vel and apply desired speed to the robot, without any noise
 # odometry - Query robot base pose and speed from pybullet and publish to /odom topic
-# control  - Position, velocity and effort control for all revolute joints on the robot
+# cart_control  - Position, velocity and effort control for joints of Cartpole robot
 # joint_state_pub - Query robot state and publish position, velocity and effort values to /joint_states
-# laser_scanner - Laser scanner simulation based on pybullet rayTestBatch function
 /pybullet_ros:
   ros__parameters:
     plugins:

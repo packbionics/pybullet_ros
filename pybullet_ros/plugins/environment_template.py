@@ -12,4 +12,4 @@ class Environment(DefaultEnv):
         """
         This method provides the possibility for the user to define an environment via python code
         """
-        self.node.get_logger.warn('loading custom environment via code!')
+        self.node.get_logger().warn('loading custom environment via code!')

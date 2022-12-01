@@ -3,17 +3,14 @@
 
 # pybullet plugins, will be loaded during runtime
 # -----------------------------------------------------------------------
-# body_vel_control - Subscribe to cmd_vel and apply desired speed to the robot, without any noise
 # odometry - Query robot base pose and speed from pybullet and publish to /odom topic
-# control  - Position, velocity and effort control for all revolute joints on the robot
+# control  - Position, velocity and effort control for all joints on the robot
 # joint_state_pub - Query robot state and publish position, velocity and effort values to /joint_states
-# laser_scanner - Laser scanner simulation based on pybullet rayTestBatch function
 /pybullet_ros:
   ros__parameters:
     plugins:
     - pybullet_ros.plugins.control:Control
     - pybullet_ros.plugins.joint_state_pub:JointStatePub
-    - pybullet_ros.plugins.link_state_pub:LinkStatePub
     - pybullet_ros.plugins.odometry:SimpleOdometry
     
     loop_rate:              120.0           # default: 80.0, the frequency at which to step sim in hz

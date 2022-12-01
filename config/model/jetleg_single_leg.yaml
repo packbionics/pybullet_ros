@@ -1,8 +1,0 @@
-test_rig:
-  Package: jetleg_description
-  RelPath: urdf/jetleg_single.xacro
-  Pose:
-    - 0.0
-    - 0.0
-    - 0.1
-  Yaw: 0.0

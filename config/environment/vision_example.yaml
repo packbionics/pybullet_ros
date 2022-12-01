@@ -1,11 +1,3 @@
-test_rig:
-  Package: jetleg_description
-  RelPath: urdf/testrig_vision.xacro
-  Pose:
-    - 0.0
-    - 0.0
-    - 0.1
-  Yaw: 0.0
 staircase:
   Package: obstacles
   RelPath: urdf/prebuilts/staircase_standalone.xacro

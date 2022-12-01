@@ -1,8 +1,0 @@
-R2D2:
-  Package: cartpole_description
-  RelPath: robot/urdf/robot.urdf
-  Pose:
-    - 0.0
-    - 0.0
-    - 0.1
-  Yaw: 0.0

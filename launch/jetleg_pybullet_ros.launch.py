@@ -24,11 +24,15 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     models_to_load = LaunchConfiguration('models_to_load')
     model = LaunchConfiguration('model')
+    robot_pose_x = LaunchConfiguration('robot_pose_x')
+    robot_pose_y = LaunchConfiguration('robot_pose_y')
+    robot_pose_z = LaunchConfiguration('robot_pose_z')
+    robot_pose_yaw = LaunchConfiguration('robot_pose_yaw')
 
     pybullet_ros_dir = get_package_share_directory('pybullet_ros')
 
     # path of file describing robots to load
-    default_model_config_file_path = os.path.join(pybullet_ros_dir, 'config/model/jetleg_pybullet_ros_model_config.yaml')
+    default_model_config_file_path = "''"
     default_model_path = os.path.join(get_package_share_directory('jetleg_description'), 'urdf/testrig_vision.xacro')
 
     # config file defining pybullet parameters
@@ -102,6 +106,30 @@ def generate_launch_description():
         "model",
         default_value=default_model_path
     )
+    robot_pose_x_arg = DeclareLaunchArgument(
+        "robot_pose_x", 
+        default_value=TextSubstitution(
+            text="0.0"
+        )
+    )
+    robot_pose_y_arg = DeclareLaunchArgument(
+        "robot_pose_y", 
+        default_value=TextSubstitution(
+            text="0.0"
+        )
+    )
+    robot_pose_z_arg = DeclareLaunchArgument(
+        "robot_pose_z", 
+        default_value=TextSubstitution(
+            text="0.1"
+        )
+    )
+    robot_pose_yaw_arg = DeclareLaunchArgument(
+        "robot_pose_yaw", 
+        default_value=TextSubstitution(
+            text="0.0"
+        )
+    )
 
     pybullet_ros_parameters=[
         config_file,
@@ -114,7 +142,12 @@ def generate_launch_description():
             "use_deformable_world": use_deformable_world,
             "gui_options": gui_options,
             "use_sim_time": use_sim_time,
-            "models_to_load": models_to_load
+            "models_to_load": models_to_load,
+            "robot_path": model,
+            "robot_pose_x": robot_pose_x,
+            "robot_pose_y": robot_pose_y,
+            "robot_pose_z": robot_pose_z,
+            "robot_pose_yaw": robot_pose_yaw,
         }
     ]
 
@@ -133,6 +166,10 @@ def generate_launch_description():
         gui_options_arg,
         models_to_load_arg,
         model_arg,
+        robot_pose_x_arg,
+        robot_pose_y_arg,
+        robot_pose_z_arg,
+        robot_pose_yaw_arg,
         Node(
             package='pybullet_ros',
             executable='pybullet_ros_wrapper',
