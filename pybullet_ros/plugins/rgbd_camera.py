@@ -47,7 +47,6 @@ class RGBDCamera(ROSPlugin):
         self.declare_parameter('rgbd_camera/resolution/width', 1280)
         self.declare_parameter('rgbd_camera/resolution/height', 720)
         self.declare_parameter('rgbd_camera/frame_id', 'camera_link')
-        self.declare_parameter('rgbd_camera/pc2_frame_id', 'camera_link')
         self.declare_parameter('rgbd_camera/resolution/is_bigendian', False)
         self.declare_parameter('rgbd_camera/resolution/encoding', 'rgba8')
         self.declare_parameter('rgbd_camera/resolution/step', 5120)
@@ -79,8 +78,8 @@ class RGBDCamera(ROSPlugin):
             rclpy.shutdown()
             return
         self.pb_camera_link_id = link_names_to_ids_dic[cam_frame_id]
-        self.rgb_img_msg.header.frame_id = self.get_parameter('rgbd_camera/pc2_frame_id').value
-        self.depth_img_msg.header.frame_id = self.get_parameter('rgbd_camera/pc2_frame_id').value
+        self.rgb_img_msg.header.frame_id = self.get_parameter('rgbd_camera/frame_id').value
+        self.depth_img_msg.header.frame_id = self.get_parameter('rgbd_camera/frame_id').value
         # create publishers
         self.pub_camera_state = self.create_publisher(PoseStamped, 'camera/state', 2)
         self.pub_rgb_img = self.create_publisher(Image, 'camera/image_raw', rclpy.qos.qos_profile_system_default)
@@ -246,7 +245,7 @@ class RGBDCamera(ROSPlugin):
             np.array: a XYZ position 5m in front of the camera
         """
 
-        target_point = [5.0, 0, 0] # expressed w.r.t camera reference frame
+        target_point = [0.0, 0.0, 5.0] # expressed w.r.t camera reference frame
         camera_position = [camera_position[0], camera_position[1], camera_position[2]]
         rm = self.pb.getMatrixFromQuaternion(camera_orientation)
         rotation_matrix = [[rm[0], rm[1], rm[2]],[rm[3], rm[4], rm[5]],[rm[6], rm[7], rm[8]]]
