@@ -6,8 +6,11 @@ TODO: briefly describe your plugin here
 
 from rclpy.node import Node
 
-class RosPlugin(Node):
-    def __init__(self, name, pybullet, robot, **kargs):
+class ROSPlugin(Node):
+    def __init__(self, wrapper, name, pybullet, robot, **kargs):
+        # reference to pybullet wrapper
+        self.wrapper = wrapper
+        # node name
         self.name = name
         # get "import pybullet as pb" and store in self.pb
         self.pb = pybullet
@@ -15,11 +18,9 @@ class RosPlugin(Node):
         self.robot = robot
 
         # construct ROS 2 node
-        if 'automatically_declare_parameters_from_overrides' in kargs:
-            super().__init__(self.name, automatically_declare_parameters_from_overrides=kargs['automatically_declare_parameters_from_overrides'])
-        else:
-            super().__init__(self.name)
-        # TODO: implement here...
+        super().__init__(self.name)
+
+        self.declare_parameter('loop_rate', 40.0)
 
         # define plugin loop
         self.rate = self.get_parameter('loop_rate').value

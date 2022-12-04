@@ -8,8 +8,8 @@ from pybullet_ros.plugins.control import Control
 
 
 class CartControl(Control):
-    def __init__(self, pybullet, robot, **kargs):
-        super().__init__(pybullet, robot, **kargs)
+    def __init__(self, wrapper, pybullet, robot, **kargs):
+        super().__init__(wrapper, pybullet, robot, **kargs)
         
         # revolute joints - joint position, velocity and effort control command individual subscribers
         for joint_index in self.joint_index_name_dic:

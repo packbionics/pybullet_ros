@@ -4,32 +4,16 @@
 position, velocity and effort control for all revolute joints on the robot
 """
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 from pybullet_ros.plugins.pve import PveControl
 
 # NOTE: 2 classes are implemented here, scroll down to the next class (Control) to see the plugin!
 
 # plugin is implemented below
-class Control(RosPlugin):
-    """position, velocity and effort control for all revolute and prismatic joints on the robot
+class Control(ROSPlugin):
+    """position, velocity and effort control for all revolute and prismatic joints on the robot"""
 
-    Attributes:
-        rate (float): determines the rate of execute()
-        timer (Timer): handles the main loop of the plugin
-        pb (ModuleType): used to access Pybullet API
-        robot (int): id for the first loaded robot
-        position_joint_commands (list): contains history of position commands
-        velocity_joint_commands (list): contains history of velocity commands
-        effort_joint_commands (list): contains history of effort commands
-        max_effort (float): maximum effort to process for any type of control
-        joint_index_name_dic (dict): dictionary of joint index to joint names
-        pc_subscribers (list): list of position control command subscribers
-        vc_subscribers (list): list of velocity control command subscribers
-        ec_subscribers (list): list of effort control command subscribers
-        joint_indices (list): list of joint indices
-    """
-
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, wrapper, pybullet, robot, **kargs):
         """constructor
 
         Args:
@@ -37,7 +21,9 @@ class Control(RosPlugin):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_control', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        super().__init__(wrapper, 'pybullet_ros_control', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+
+        self.declare_parameter('max_effort', 100.0)
 
         # lists to recall last received command (useful when controlling multiple joints)
         self.position_joint_commands = []

@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 
-"""
-Subscribe to cmd_vel and apply desired speed to the robot, without any noise
-
-tf explained:
-pybullet requires that velocity of the robot is set w.r.t. world reference frame
-however cmd_vel convention required velocity to be expressed w.r.t. robot base frame
-therefore a transformation is needed.
-"""
-
 import math
 import rclpy
 import numpy as np
 from geometry_msgs.msg import Twist, Vector3, Vector3Stamped
 from rclpy.duration import Duration
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
-class CmdVelCtrl(RosPlugin):
-    def __init__(self, pybullet, robot, **kargs):
-        super().__init__('pybullet_ros_cmd_vel', pybullet, robot)
+class CmdVelCtrl(ROSPlugin):
+    """
+    Subscribe to cmd_vel and apply desired speed to the robot, without any noise
+
+    tf explained:
+    pybullet requires that velocity of the robot is set w.r.t. world reference frame
+    however cmd_vel convention required velocity to be expressed w.r.t. robot base frame
+    therefore a transformation is needed.
+    """
+
+    def __init__(self, wrapper, pybullet, robot, **kargs):
+        super().__init__('pybullet_ros_cmd_vel', wrapper, pybullet, robot)
         
         # subscribe to robot velocity commands
         self.cmd_vel_msg = None
@@ -66,8 +66,12 @@ class CmdVelCtrl(RosPlugin):
         source_frame = odom, world_frame, target_frame = base_link, robot_frame
         """
         # get robot pose from pybullet
-        t, r = self.pb.getBasePositionAndOrientation(self.robot)
-        return [t[0], t[1], t[2]], [r[0], r[1], r[2], r[3]]
+        try:
+            t, r = self.pb.getBasePositionAndOrientation(self.robot)
+            return [t[0], t[1], t[2]], [r[0], r[1], r[2], r[3]]
+        except Exception as ex:
+            self.get_logger().info('An error occurred while trying to access robot position and orientation. Please ensure the robot is fully loaded in the environment.')
+            return [0, 0, 0], [0, 0, 0, 0]
 
     def asMatrix(self, target_frame, hdr):
         """copied from tf (listener.py)"""

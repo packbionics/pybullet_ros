@@ -1,0 +1,8 @@
+staircase:
+  Package: obstacles
+  RelPath: urdf/prebuilts/staircase_standalone.xacro
+  Pose:
+  - 1.0
+  - 0.0
+  - 0.1
+  Yaw: 0.0

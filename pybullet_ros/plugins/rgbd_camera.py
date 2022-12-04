@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-RGBD camera sensor simulation for pybullet_ros base on pybullet.getCameraImage()
+RGBD camera sensor simulation for pybullet_ros based on pybullet.getCameraImage()
 """
 
 import math
@@ -20,35 +20,13 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Quaternion
 
-from pybullet_ros.plugins.ros_plugin import RosPlugin
+from pybullet_ros.plugins.ros_plugin import ROSPlugin
 
 
-class RGBDCamera(RosPlugin):
-    """Plugin used to process camera frames from simulated camera in Pybullet
+class RGBDCamera(ROSPlugin):
+    """Plugin used to process camera frames from simulated camera in Pybullet"""
 
-    Attributes:
-        rate (float): determines the rate of execute()
-        timer (Timer): handles the main loop of the plugin
-        pb (ModuleType): used to access Pybullet API
-        robot (int): id for the first loaded robot
-        camera_pose_msg (PoseStamped): contains the XYZ position and orientation of the camera
-        camera_position (Point): used to update XYZ position of camera
-        camera_orientation (Quaternion): used to update orientation of camera
-        image_msg (Image): contains image information of the most current camera frame
-        image_mode (str): specifies the image mode to access (e.g. RGB, depth, etc)
-        pb_camera_link_id (int): id of the camera link used for computer vision
-        pub_camera_state (Publisher): ROS 2 publisher for broadcasting current camera pose
-        pub_image (Publisher): ROS 2 publisher for broadcasting current simulated frame
-        hfov (float): horizontal FOV of camera
-        vfov (float): vertical FOV of the camera
-        near_plane (float): nearest depth to the camera that is captured
-        far_plane (float): farthest depth from the camera that is captured
-        projection_matrix (numpy.array): 4x4 matrix that maps 3D points to image plane
-        camera_params_serv (CameraParams): service that handles requests for camera parameters
-        image_bridge (CvBridge): used for converting OpenCV images to ROS 2 Image msg type
-    """
-
-    def __init__(self, pybullet, robot, **kargs):
+    def __init__(self, wrapper, pybullet, robot, **kargs):
         """sets up parameters, topics, and services
 
         Args:
@@ -56,7 +34,7 @@ class RGBDCamera(RosPlugin):
             robot (int): first robot loaded
         """
 
-        super().__init__('pybullet_ros_rgbd_camera', pybullet, robot, automatically_declare_parameters_from_overrides=True)
+        super().__init__(wrapper, 'pybullet_ros_rgbd_camera', pybullet, robot)
         
         # create msg placeholders for publication
         self.camera_pose_msg = PoseStamped()
@@ -64,6 +42,18 @@ class RGBDCamera(RosPlugin):
         self.camera_orientation = Quaternion()
         self.rgb_img_msg = Image()
         self.depth_img_msg = Image()
+
+        self.declare_parameter('image_mode', 'rgbd')
+        self.declare_parameter('rgbd_camera/resolution/width', 1280)
+        self.declare_parameter('rgbd_camera/resolution/height', 720)
+        self.declare_parameter('rgbd_camera/frame_id', 'camera_link')
+        self.declare_parameter('rgbd_camera/resolution/is_bigendian', False)
+        self.declare_parameter('rgbd_camera/resolution/encoding', 'rgba8')
+        self.declare_parameter('rgbd_camera/resolution/step', 5120)
+        self.declare_parameter('rgbd_camera/hfov', 110.0)
+        self.declare_parameter('rgbd_camera/vfov', 70.0)
+        self.declare_parameter('rgbd_camera/near_plane', 1.0)
+        self.declare_parameter('rgbd_camera/far_plane', 20.0)
         
         self.image_mode = self.get_parameter('image_mode').value
         assert self.image_mode in ['rgb', 'rgbd', 'depth', 'segmentation']
@@ -88,8 +78,8 @@ class RGBDCamera(RosPlugin):
             rclpy.shutdown()
             return
         self.pb_camera_link_id = link_names_to_ids_dic[cam_frame_id]
-        self.rgb_img_msg.header.frame_id = self.get_parameter('rgbd_camera/pc2_frame_id').value
-        self.depth_img_msg.header.frame_id = self.get_parameter('rgbd_camera/pc2_frame_id').value
+        self.rgb_img_msg.header.frame_id = self.get_parameter('rgbd_camera/frame_id').value
+        self.depth_img_msg.header.frame_id = self.get_parameter('rgbd_camera/frame_id').value
         # create publishers
         self.pub_camera_state = self.create_publisher(PoseStamped, 'camera/state', 2)
         self.pub_rgb_img = self.create_publisher(Image, 'camera/image_raw', rclpy.qos.qos_profile_system_default)
@@ -255,7 +245,7 @@ class RGBDCamera(RosPlugin):
             np.array: a XYZ position 5m in front of the camera
         """
 
-        target_point = [5.0, 0, 0] # expressed w.r.t camera reference frame
+        target_point = [0.0, 0.0, 5.0] # expressed w.r.t camera reference frame
         camera_position = [camera_position[0], camera_position[1], camera_position[2]]
         rm = self.pb.getMatrixFromQuaternion(camera_orientation)
         rotation_matrix = [[rm[0], rm[1], rm[2]],[rm[3], rm[4], rm[5]],[rm[6], rm[7], rm[8]]]
