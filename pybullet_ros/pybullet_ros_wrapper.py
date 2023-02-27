@@ -119,22 +119,21 @@ class pyBulletRosWrapper(Node):
 
         try:
             self.executor.spin()
-        except Exception as e:
-            exc_message = repr(e)
-            self.get_logger().error(str(exc_message))
-        finally:
-            # remove connection from physics server
-            self.pb.disconnect()
+        except KeyboardInterrupt as e:
+            pass
 
-            # stop plugin and callback executions
-            self.executor.shutdown()
+        # remove connection from physics server
+        self.pb.disconnect()
 
-            # release node resources of plugins
-            for node in self.plugins:
-                node.destroy_node()
+        # stop plugin and callback executions
+        self.executor.shutdown()
 
-            # release resources of the pybullet ros wrapper
-            self.destroy_node()
+        # release node resources of plugins
+        # for node in self.plugins:
+        #     node.destroy_node()
+
+        # release resources of the pybullet ros wrapper
+        # self.destroy_node()
 
     def wrapper_callback(self):
         """loop for running physcs simulation"""
@@ -364,11 +363,12 @@ class pyBulletRosWrapper(Node):
 
 
 def main():
+    rclpy.init()
+
     try:
-        rclpy.init()
         pyBulletRosWrapper()
-    finally:
-        rclpy.shutdown()
+    except Exception as ex:
+        print(repr(ex))
 
 if __name__ == '__main__':
     main()

@@ -280,6 +280,12 @@ class RGBDCamera(ROSPlugin):
                                                     self.projection_matrix,
                                                     renderer=self.pb.ER_BULLET_HARDWARE_OPENGL
                                                 )
+
+        # update msg time stamp
+        self.rgb_img_msg.header.stamp = self.get_clock().now().to_msg()
+        self.depth_img_msg.header.stamp = self.rgb_img_msg.header.stamp
+        self.camera_info.header.stamp = self.depth_img_msg.header.stamp
+
         # frame extraction function from pybullet
         rgb_frame = self.extract_frame(pybullet_cam_resp)
         rgb_frame = np.flip(rgb_frame, axis=0)
@@ -291,10 +297,6 @@ class RGBDCamera(ROSPlugin):
         # fill pixel data array
         self.rgb_img_msg.data = self.image_bridge.cv2_to_imgmsg(rgb_frame).data
         self.depth_img_msg.data = self.image_bridge.cv2_to_imgmsg(depth_frame, self.depth_img_msg.encoding).data
-        # update msg time stamp
-        self.rgb_img_msg.header.stamp = self.get_clock().now().to_msg()
-        self.depth_img_msg.header.stamp = self.get_clock().now().to_msg()
-        self.camera_info.header.stamp = self.depth_img_msg.header.stamp
         # publish camera image to ROS network
         self.pub_camera_state.publish(self.camera_pose_msg)
         self.pub_rgb_img.publish(self.rgb_img_msg)

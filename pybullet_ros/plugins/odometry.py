@@ -6,7 +6,6 @@ This component does not add any noise to it
 """
 
 from nav_msgs.msg import Odometry
-from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, TransformStamped
 
 from pybullet_ros.plugins.ros_plugin import ROSPlugin
@@ -42,7 +41,7 @@ class SimpleOdometry(ROSPlugin):
         self.br = TransformBroadcaster(self)
 
     def pub_odom_transform(self):
-                    # set msg timestamp based on current time
+            # set msg timestamp based on current time
             now = self.get_clock().now().to_msg()
             self.odom_msg.header.stamp = now
             self.odom_trans.header.stamp = now
@@ -50,7 +49,7 @@ class SimpleOdometry(ROSPlugin):
             try:
                 position, orientation = self.pb.getBasePositionAndOrientation(self.robot)
             except Exception as ex:
-                raise ConnectionError('An error occurred while trying to access position and orientation of robot. Please ensure the robot is fully loaded in the environment.')
+                raise RuntimeError('An error occurred while trying to access position and orientation of robot. Please ensure the robot is fully loaded in the environment.')
 
             [self.odom_trans.transform.translation.x,\
             self.odom_trans.transform.translation.y,\
@@ -82,5 +81,5 @@ class SimpleOdometry(ROSPlugin):
         try:
             if not self.wrapper.pause_simulation:
                 self.pub_odom_transform()
-        except ConnectionError as connex:
-            self.get_logger().info(str(connex))
+        except RuntimeError as exc:
+            self.get_logger().info(repr(exc))

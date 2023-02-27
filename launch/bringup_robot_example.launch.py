@@ -21,7 +21,7 @@ def generate_launch_description():
     fixed_base = LaunchConfiguration('fixed_base')
     use_deformable_world = LaunchConfiguration('use_deformable_world')
     gui_options = LaunchConfiguration('gui_options')
-    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+    use_sim_time = LaunchConfiguration('use_sim_time', default='False')
     models_to_load = LaunchConfiguration('models_to_load')
     model = LaunchConfiguration('model')
     robot_pose_x = LaunchConfiguration('robot_pose_x')
