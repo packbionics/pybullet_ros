@@ -8,6 +8,8 @@ from launch.actions.declare_launch_argument import DeclareLaunchArgument
 from launch.substitutions import Command, TextSubstitution
 from launch.substitutions.launch_configuration import LaunchConfiguration
 
+import xacro
+
 def generate_launch_description():
 
     # partial configuration params for pybullet_ros node, rest will be loaded from config_file
@@ -151,8 +153,6 @@ def generate_launch_description():
         }
     ]
 
-    robot_urdf = Command(['xacro',' ', model])
-
     return LaunchDescription([
         config_file_arg,
         model_config_file_arg,
@@ -175,13 +175,5 @@ def generate_launch_description():
             executable='pybullet_ros_wrapper',
             output='screen',
             parameters=pybullet_ros_parameters
-        ),
-        Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            name='robot_state_publisher',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time, 
-                         'robot_description': robot_urdf}],
         )
     ])
